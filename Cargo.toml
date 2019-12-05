@@ -1,0 +1,2 @@
+[workspace]
+members = ["oasis-amqp", "oasis-amqp-derive"]
