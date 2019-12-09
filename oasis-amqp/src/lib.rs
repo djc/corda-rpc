@@ -71,6 +71,78 @@ impl AmqpFrame {
     }
 }
 
+#[amqp]
+#[derive(Debug, Serialize)]
+pub enum Performative<'a> {
+    Open(Open<'a>),
+    Begin(Begin),
+}
+
+#[amqp(descriptor("amqp:open:list", 0x00000000_00000010))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:open:list")]
+pub struct Open<'a> {
+    pub container_id: &'a str,
+    pub hostname: Option<&'a str>,
+    pub max_frame_size: Option<u32>,
+    pub channel_max: Option<u16>,
+    pub idle_timeout: Option<u32>,
+    pub outgoing_locales: Option<Vec<&'a str>>,
+    pub incoming_locales: Option<Vec<&'a str>>,
+    pub offered_capabilities: Option<Vec<&'a str>>,
+    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
+}
+
+#[amqp(descriptor("amqp:open:begin", 0x00000000_00000011))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:open:begin")]
+pub struct Begin {
+    pub remote_channel: Option<u16>,
+    pub next_outgoing_id: u16,
+    pub incoming_window: u32,
+    pub outgoing_window: u32,
+    pub handle_max: u32,
+    /*pub offered_capabilities: Option<Vec<&'a str>>,
+    pub desired_capabilities: Option<Vec<&'a str>>,
+    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,*/
+}
+
+pub enum ConnectionState {
+    Start,
+    HdrRcvd,
+    HdrSent,
+    HdrExch,
+    OpenPipe,
+    OcPipe,
+    OpenRcvd,
+    OpenSent,
+    ClosePipe,
+    Opened,
+    CloseRcvd,
+    CloseSent,
+    Discarding,
+    End,
+}
+
+pub struct Session {
+    pub next_incoming_id: u32,
+    pub incoming_window: u32,
+    pub next_outgoing_id: u32,
+    pub outgoing_window: u32,
+    pub remote_incoming_window: u32,
+    pub remote_outgoing_window: u32,
+}
+
+pub enum SessionState {
+    Unmapped,
+    BeginSent,
+    BeginRcvd,
+    Mapped,
+    EndSent,
+    EndRcvd,
+    Discarding,
+}
+
 pub mod sasl {
     use super::*;
 
@@ -129,30 +201,6 @@ pub mod sasl {
 trait Described {
     const NAME: &'static [u8];
     const ID: u64;
-}
-
-pub enum Performative<'a> {
-    Open(Open<'a>),
-    Begin,
-    Attach,
-    Flow,
-    Transfer,
-    Disposition,
-    Detach,
-    End,
-    Close,
-}
-
-pub struct Open<'a> {
-    container_id: &'a str,
-    hostname: Option<&'a str>,
-    max_frame_size: Option<u32>,
-    channel_max: Option<u16>,
-    idle_timeout: Option<u64>,
-    outgoing_locales: Option<Vec<&'a str>>,
-    incoming_locales: Option<Vec<&'a str>>,
-    offered_capabilities: Option<Vec<&'a str>>,
-    properties: Option<Vec<&'a str>>,
 }
 
 #[derive(Debug, Error)]
