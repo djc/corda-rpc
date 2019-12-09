@@ -108,7 +108,7 @@ impl<'a> AmqpFrame<'a> {
 #[derive(Debug, Serialize)]
 pub enum Performative<'a> {
     Open(Open<'a>),
-    Begin(Begin),
+    Begin(Begin<'a>),
 }
 
 #[amqp(descriptor("amqp:open:list", 0x00000000_00000010))]
@@ -126,18 +126,19 @@ pub struct Open<'a> {
     pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
 }
 
-#[amqp(descriptor("amqp:open:begin", 0x00000000_00000011))]
+#[amqp(descriptor("amqp:begin:list", 0x00000000_00000011))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:open:begin")]
-pub struct Begin {
+#[serde(rename = "amqp:begin:list")]
+pub struct Begin<'a> {
     pub remote_channel: Option<u16>,
-    pub next_outgoing_id: u16,
+    pub next_outgoing_id: u32,
     pub incoming_window: u32,
     pub outgoing_window: u32,
-    pub handle_max: u32,
-    /*pub offered_capabilities: Option<Vec<&'a str>>,
+    pub handle_max: Option<u32>,
+    #[serde(borrow)]
+    pub offered_capabilities: Option<Vec<&'a str>>,
     pub desired_capabilities: Option<Vec<&'a str>>,
-    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,*/
+    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
 }
 
 pub enum ConnectionState {
