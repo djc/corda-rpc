@@ -270,8 +270,8 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         V: Visitor<'de>,
     {
         let len = match self.next_constructor()? {
-            0xa1 => self.next()? as usize,
-            0xb1 => self.read_u32()? as usize,
+            0xa1 | 0xa3 => self.next()? as usize,
+            0xb1 | 0xb3 => self.read_u32()? as usize,
             _ => return Err(Error::InvalidData),
         };
 
