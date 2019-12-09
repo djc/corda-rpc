@@ -35,8 +35,14 @@ impl<'a> Frame<'a> {
         let ty = cur.get_u8();
         let nested = &buf[cur.position() as usize..];
         match ty {
-            0x00 => Ok(Frame::Amqp(AmqpFrame::decode(nested, doff)?)),
-            0x01 => Ok(Frame::Sasl(de::deserialize(&nested[2..])?)),
+            0x00 => Ok(Frame::Amqp(AmqpFrame::decode(doff, nested)?)),
+            0x01 => {
+                let (sasl, rest) = de::deserialize(&nested[2..])?;
+                if !rest.is_empty() {
+                    return Err(Error::TrailingCharacters);
+                }
+                Ok(Frame::Sasl(sasl))
+            }
             _ => Err(Error::InvalidData),
         }
     }
@@ -66,7 +72,7 @@ impl<'a> Frame<'a> {
 pub struct AmqpFrame {}
 
 impl AmqpFrame {
-    fn decode(_: &[u8], _: u8) -> Result<Self, Error> {
+    fn decode(_: u8, _: &[u8]) -> Result<Self, Error> {
         unimplemented!()
     }
 }

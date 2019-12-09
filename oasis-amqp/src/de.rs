@@ -5,14 +5,10 @@ use serde::de::{self, DeserializeSeed, EnumAccess, SeqAccess, VariantAccess, Vis
 
 use crate::Error;
 
-pub fn deserialize<'a, T: de::Deserialize<'a>>(bytes: &'a [u8]) -> Result<T> {
+pub fn deserialize<'a, T: de::Deserialize<'a>>(bytes: &'a [u8]) -> Result<(T, &'a [u8])> {
     let mut deserializer = Deserializer::from_bytes(bytes);
     let val = T::deserialize(&mut deserializer)?;
-    if deserializer.input.is_empty() {
-        Ok(val)
-    } else {
-        Err(Error::TrailingCharacters)
-    }
+    Ok((val, deserializer.input))
 }
 
 pub struct Deserializer<'de> {
