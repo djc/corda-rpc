@@ -1,33 +1,14 @@
-use std::io::Cursor;
-
-use bytes::Buf;
-use oasis_amqp::{
-    sasl, AmqpFrame, Begin, Frame, Open, Performative, AMQP_PROTO_HEADER, MIN_MAX_FRAME_SIZE,
-    SASL_PROTO_HEADER,
-};
+use futures::{sink::SinkExt, stream::StreamExt};
+use oasis_amqp::{sasl, AmqpFrame, Begin, Codec, Frame, Open, Performative};
 use serde_bytes::Bytes;
+use tokio;
 use tokio::net::TcpStream;
-use tokio::{
-    self,
-    io::{AsyncReadExt, AsyncWriteExt},
-};
+use tokio_util::codec::Framed;
 
 #[tokio::main]
 async fn main() {
-    let mut stream = TcpStream::connect("127.0.0.1:10006").await.unwrap();
-    stream.write_all(SASL_PROTO_HEADER).await.unwrap();
-    let mut frames = vec![0u8; MIN_MAX_FRAME_SIZE];
-    let len = stream.read(&mut frames).await.unwrap();
-    println!("received {} bytes: {:?}", len, &frames[..len]);
-    let mut buf = Cursor::new(&frames[..len]);
-
-    let mut header = [0u8; 8];
-    buf.copy_to_slice(&mut header);
-    assert_eq!(header, SASL_PROTO_HEADER);
-
-    let pos = buf.position() as usize;
-    let frame = Frame::decode(&frames[pos..len]);
-    println!("read: {:#?}", frame);
+    let stream = TcpStream::connect("127.0.0.1:10006").await.unwrap();
+    let mut transport = Framed::new(stream, Codec::default());
 
     let init = Frame::Sasl(sasl::Frame::Init(sasl::Init {
         mechanism: sasl::Mechanism::Plain,
@@ -35,16 +16,8 @@ async fn main() {
         hostname: None,
     }));
 
-    let buf = init.to_vec();
-    println!("\nwriting {:?}", buf);
-    stream.write_all(&buf).await.unwrap();
-
-    let len = stream.read(&mut frames).await.unwrap();
-    println!("received {} bytes: {:?}", len, &frames[..len]);
-    let msg_len = Cursor::new(&frames[..len]).get_u32_be() as usize;
-    let msg = Frame::decode(&frames[..msg_len]);
-    println!("read: {:#?}", msg);
-    assert_eq!(&frames[msg_len..msg_len + 8], AMQP_PROTO_HEADER);
+    transport.send(init).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await);
 
     let open = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -56,16 +29,8 @@ async fn main() {
         body: &[],
     });
 
-    let buf = open.to_vec();
-    println!("\nwriting {:?}", buf);
-    let _ = stream.write_all(AMQP_PROTO_HEADER).await.unwrap();
-    stream.write_all(&buf).await.unwrap();
-
-    let len = stream.read(&mut frames).await.unwrap();
-    println!("received {} bytes: {:?}", len, &frames[..len]);
-    let msg_len = Cursor::new(&frames[..len]).get_u32_be() as usize;
-    let msg = Frame::decode(&frames[..msg_len]);
-    println!("read: {:#?}", msg);
+    transport.send(open).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await);
 
     let begin = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -80,13 +45,6 @@ async fn main() {
         body: &[],
     });
 
-    let buf = begin.to_vec();
-    println!("\nwriting {:?}", buf);
-    let _ = stream.write_all(&buf).await.unwrap();
-
-    let len = stream.read(&mut frames).await.unwrap();
-    println!("received {} bytes: {:?}", len, &frames[..len]);
-    let msg_len = Cursor::new(&frames[..len]).get_u32_be() as usize;
-    let msg = Frame::decode(&frames[..msg_len]);
-    println!("read: {:#?}", msg);
+    transport.send(begin).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await);
 }

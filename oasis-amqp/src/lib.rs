@@ -1,17 +1,86 @@
 use std::array::TryFromSliceError;
 use std::convert::TryInto;
 use std::fmt;
-use std::io::Cursor;
+use std::io;
+use std::mem;
 use std::str;
 
-use bytes::Buf;
+use bytes::{self, BufMut, BytesMut};
 use err_derive::Error;
 use oasis_amqp_derive::amqp;
 use serde::{self, Deserialize, Serialize};
 use serde_bytes::Bytes;
+use tokio_util::codec::{Decoder, Encoder};
 
 mod de;
 mod ser;
+
+#[derive(Default)]
+pub struct Codec {
+    sending: Option<Protocol>,
+    receiving: Option<Protocol>,
+}
+
+impl Decoder for Codec {
+    type Item = BytesFrame;
+    type Error = Error;
+
+    fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+        if self.receiving.is_none() {
+            let header = src.split_to(8);
+            self.receiving = Some(Protocol::from_bytes(&header));
+        }
+
+        if src.len() < 4 {
+            return Ok(None);
+        }
+
+        let len = u32::from_be_bytes((&src[..4]).try_into().unwrap()) as usize;
+        println!("received {} bytes: {:?}", len, &src[..len]);
+        if src.len() < len {
+            return Ok(None);
+        }
+
+        let bytes = src.split_to(len).freeze();
+        let frame = Frame::decode(&bytes[4..])?;
+        if let Frame::Sasl(sasl::Frame::Outcome(_)) = frame {
+            self.receiving = None;
+        }
+
+        let frame = unsafe { mem::transmute(frame) };
+        Ok(Some(BytesFrame { bytes, frame }))
+    }
+}
+
+impl Encoder for Codec {
+    type Item = Frame<'static>;
+    type Error = Error;
+
+    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+        let proto = item.protocol();
+        if self.sending != Some(proto) {
+            dst.put(proto.header());
+            self.sending = Some(proto);
+        }
+
+        let buf = item.to_vec();
+        println!("writing {:?}", buf);
+        dst.put(&*buf);
+        Ok(())
+    }
+}
+
+pub struct BytesFrame {
+    #[allow(dead_code)]
+    bytes: bytes::Bytes,
+    pub frame: Frame<'static>,
+}
+
+impl std::fmt::Debug for BytesFrame {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.frame.fmt(fmt)
+    }
+}
 
 #[derive(Debug)]
 pub enum Frame<'a> {
@@ -21,23 +90,16 @@ pub enum Frame<'a> {
 
 impl<'a> Frame<'a> {
     pub fn decode(buf: &'a [u8]) -> Result<Self, Error> {
-        let mut cur = Cursor::new(buf);
-        let len = cur.get_u32_be();
-        if cur.remaining() < (len - 4).try_into().unwrap() {
-            return Err(Error::InvalidData);
-        }
-
-        let doff = cur.get_u8();
+        let doff = buf[0];
         if doff < 2 {
             return Err(Error::InvalidData);
         }
 
-        let ty = cur.get_u8();
-        let nested = &buf[cur.position() as usize..];
-        match ty {
-            0x00 => Ok(Frame::Amqp(AmqpFrame::decode(doff, nested)?)),
+        match buf[1] {
+            0x00 => Ok(Frame::Amqp(AmqpFrame::decode(doff, &buf[2..])?)),
             0x01 => {
-                let (sasl, rest) = de::deserialize(&nested[2..])?;
+                assert_eq!(&buf[2..4], &[0, 0]);
+                let (sasl, rest) = de::deserialize(&buf[4..])?;
                 if !rest.is_empty() {
                     return Err(Error::TrailingCharacters);
                 }
@@ -55,7 +117,6 @@ impl<'a> Frame<'a> {
                 buf[5] = 0x00;
                 ser::into_bytes(&f.performative, &mut buf).unwrap();
                 buf.extend_from_slice(f.body);
-
                 (&mut buf[6..8]).copy_from_slice(&f.channel.to_be_bytes()[..]);
             }
             Frame::Sasl(f) => {
@@ -67,6 +128,36 @@ impl<'a> Frame<'a> {
         let len = buf.len() as u32;
         (&mut buf[..4]).copy_from_slice(&len.to_be_bytes()[..]);
         buf
+    }
+
+    fn protocol(&self) -> Protocol {
+        match self {
+            Frame::Sasl(_) => Protocol::Sasl,
+            Frame::Amqp(_) => Protocol::Amqp,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+enum Protocol {
+    Sasl,
+    Amqp,
+}
+
+impl Protocol {
+    fn from_bytes(bytes: &[u8]) -> Self {
+        match bytes {
+            SASL_PROTO_HEADER => Protocol::Sasl,
+            AMQP_PROTO_HEADER => Protocol::Amqp,
+            p => panic!("invalid protocol header {:?}", p),
+        }
+    }
+
+    fn header(&self) -> &'static [u8] {
+        match self {
+            Protocol::Sasl => SASL_PROTO_HEADER,
+            Protocol::Amqp => AMQP_PROTO_HEADER,
+        }
     }
 }
 
@@ -245,6 +336,8 @@ pub enum Error {
     Syntax,
     #[error(display = "unexpected end")]
     UnexpectedEnd,
+    #[error(display = "I/O error: {}", _0)]
+    Io(#[source] io::Error),
     #[error(display = "deserialization failed: {}", _0)]
     Deserialization(String),
     #[error(display = "serialization failed: {}", _0)]
