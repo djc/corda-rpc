@@ -15,7 +15,7 @@ mod ser;
 
 #[derive(Debug)]
 pub enum Frame<'a> {
-    Amqp(AmqpFrame),
+    Amqp(AmqpFrame<'a>),
     Sasl(sasl::Frame<'a>),
 }
 
@@ -49,19 +49,21 @@ impl<'a> Frame<'a> {
 
     pub fn to_vec(&self) -> Vec<u8> {
         let mut buf = vec![0; 8];
-        let ty = match self {
+        buf[4] = 2; // doff
+        match self {
             Frame::Amqp(f) => {
-                ser::into_bytes(f, &mut buf).unwrap();
-                0x00
+                buf[5] = 0x00;
+                ser::into_bytes(&f.performative, &mut buf).unwrap();
+                buf.extend_from_slice(f.body);
+
+                (&mut buf[6..8]).copy_from_slice(&f.channel.to_be_bytes()[..]);
             }
             Frame::Sasl(f) => {
+                buf[5] = 0x01;
                 ser::into_bytes(f, &mut buf).unwrap();
-                0x01
             }
-        };
+        }
 
-        buf[4] = 2;
-        buf[5] = ty;
         let len = buf.len() as u32;
         (&mut buf[..4]).copy_from_slice(&len.to_be_bytes()[..]);
         buf
@@ -69,11 +71,36 @@ impl<'a> Frame<'a> {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct AmqpFrame {}
+pub struct AmqpFrame<'a> {
+    pub channel: u16,
+    pub extended_header: Option<&'a [u8]>,
+    pub performative: Performative<'a>,
+    pub body: &'a [u8],
+}
 
-impl AmqpFrame {
-    fn decode(_: u8, _: &[u8]) -> Result<Self, Error> {
-        unimplemented!()
+impl<'a> AmqpFrame<'a> {
+    fn decode(doff: u8, buf: &'a [u8]) -> Result<Self, Error> {
+        let (channel, buf) = buf.split_at(2);
+        let channel = u16::from_be_bytes(channel.try_into().unwrap());
+
+        let (extended, buf) = buf.split_at((doff - 2) as usize);
+        let extended_header = if !extended.is_empty() {
+            Some(extended)
+        } else {
+            None
+        };
+
+        let (performative, buf) = de::deserialize(buf)?;
+        if !buf.is_empty() {
+            return Err(Error::TrailingCharacters);
+        }
+
+        Ok(Self {
+            channel,
+            extended_header,
+            performative,
+            body: &[],
+        })
     }
 }
 
