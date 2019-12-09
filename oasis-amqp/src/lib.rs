@@ -79,8 +79,6 @@ pub mod sasl {
     pub enum Frame<'a> {
         Mechanisms(Mechanisms),
         Init(Init<'a>),
-        Challenge(Challenge),
-        Response(Response),
         Outcome(Outcome<'a>),
     }
 
@@ -108,16 +106,6 @@ pub mod sasl {
         Plain,
         ScramSha1,
     }
-
-    #[amqp(descriptor("amqp:sasl-challenge:list", 0x00000000_00000042))]
-    #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename = "amqp:sasl-challenge:list")]
-    pub struct Challenge;
-
-    #[amqp(descriptor("amqp:sasl-response:list", 0x00000000_00000043))]
-    #[derive(Debug, Deserialize, Serialize)]
-    #[serde(rename = "amqp:sasl-response:list")]
-    pub struct Response;
 
     #[amqp(descriptor("amqp:sasl-outcome:list", 0x00000000_00000044))]
     #[derive(Debug, Deserialize, Serialize)]
