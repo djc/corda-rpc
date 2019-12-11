@@ -1,9 +1,7 @@
 use std::array::TryFromSliceError;
+use std::collections::HashMap;
 use std::convert::TryInto;
-use std::fmt;
-use std::io;
-use std::mem;
-use std::str;
+use std::{fmt, io, mem, str};
 
 use bytes::{self, BufMut, BytesMut};
 use err_derive::Error;
@@ -200,6 +198,8 @@ impl<'a> AmqpFrame<'a> {
 pub enum Performative<'a> {
     Open(Open<'a>),
     Begin(Begin<'a>),
+    Attach(Attach<'a>),
+    Close(Close<'a>),
 }
 
 #[amqp(descriptor("amqp:open:list", 0x00000000_00000010))]
@@ -232,6 +232,65 @@ pub struct Begin<'a> {
     pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
 }
 
+#[amqp(descriptor("amqp:attach:list", 0x00000000_00000012))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:attach:list")]
+pub struct Attach<'a> {
+    #[serde(borrow)]
+    pub name: &'a str,
+    pub handle: u32,
+    pub role: Role,
+    pub snd_settle_mode: Option<SenderSettleMode>,
+    pub rcv_settle_mode: Option<ReceiverSettleMode>,
+    pub source: Option<&'a str>,
+    pub target: Option<&'a str>,
+    pub unsettled: Option<HashMap<&'a [u8], u32>>,
+    pub incomplete_unsettled: Option<bool>,
+    pub initial_delivery_count: Option<u32>,
+    pub max_message_size: Option<u64>,
+    pub offered_capabilities: Option<Vec<&'a str>>,
+    pub desired_capabilities: Option<Vec<&'a str>>,
+    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
+}
+
+#[amqp(descriptor("amqp:close:list", 0x00000000_00000018))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:close:list")]
+pub struct Close<'a> {
+    #[serde(borrow)]
+    pub error: Option<AmqpError<'a>>,
+}
+
+#[amqp(descriptor("amqp:error:list", 0x00000000_0000001d))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:error:list")]
+pub struct AmqpError<'a> {
+    #[serde(borrow)]
+    condition: &'a str,
+    description: &'a str,
+    info: Option<Vec<(&'a [u8], &'a [u8])>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Role {
+    Sender,
+    Receiver,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum SenderSettleMode {
+    Unsettled,
+    Settled,
+    Mixed,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum ReceiverSettleMode {
+    First,
+    Second,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub enum ConnectionState {
     Start,
     HdrRcvd,
