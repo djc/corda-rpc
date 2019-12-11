@@ -401,6 +401,19 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
+        if self.peek()? == 0 {
+            self.assume(0)?;
+            match self.peek()? {
+                0x44 | 0x53 | 0x80 => {
+                    self.parse_u64()?;
+                }
+                0xa3 | 0xb3 => {
+                    self.parse_bytes()?;
+                }
+                _ => return Err(Error::InvalidData),
+            }
+        }
+
         let (size, _, constructor) = self.composite()?;
         let (input, rest) = self.input.split_at(size);
         self.input = rest;
