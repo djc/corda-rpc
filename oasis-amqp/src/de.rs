@@ -49,6 +49,32 @@ impl<'de> Deserializer<'de> {
         Ok(u32::from_be_bytes(val.try_into()?))
     }
 
+    fn parse_u64(&mut self) -> Result<u64> {
+        Ok(match self.next()? {
+            0x44 => 0,
+            0x53 => self.next()? as u64,
+            0x80 => {
+                let (val, rest) = self.input.split_at(8);
+                self.input = rest;
+                let val = val.try_into()?;
+                u64::from_be_bytes(val)
+            }
+            _ => return Err(Error::InvalidData),
+        })
+    }
+
+    fn parse_bytes(&mut self) -> Result<&'de [u8]> {
+        let len = match self.next_constructor()? {
+            0xa0 | 0xa3 => self.next()? as usize,
+            0xb0 | 0xb3 => self.read_u32()? as usize,
+            _ => return Err(Error::InvalidData),
+        };
+
+        let (val, rest) = self.input.split_at(len);
+        self.input = rest;
+        Ok(val)
+    }
+
     fn peek_constructor(&mut self) -> Result<usize> {
         Ok(match self.constructor.as_ref() {
             Some(v) => *v,
@@ -171,17 +197,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.next()? {
-            0x44 => visitor.visit_u64(0),
-            0x53 => visitor.visit_u64(self.next()? as u64),
-            0x80 => {
-                let (val, rest) = self.input.split_at(8);
-                self.input = rest;
-                let val = val.try_into()?;
-                visitor.visit_u64(u64::from_be_bytes(val))
-            }
-            _ => Err(Error::InvalidData),
-        }
+        visitor.visit_u64(self.parse_u64()?)
     }
 
     fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value>
@@ -290,15 +306,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        let len = match self.next_constructor()? {
-            0xa0 | 0xa3 => self.next()? as usize,
-            0xb0 | 0xb3 => self.read_u32()? as usize,
-            _ => return Err(Error::InvalidData),
-        };
-
-        let (val, rest) = self.input.split_at(len);
-        self.input = rest;
-        visitor.visit_borrowed_bytes(val)
+        visitor.visit_borrowed_bytes(self.parse_bytes()?)
     }
 
     fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value>
