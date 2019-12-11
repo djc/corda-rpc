@@ -1,5 +1,5 @@
 use futures::{sink::SinkExt, stream::StreamExt};
-use oasis_amqp::{sasl, AmqpFrame, Begin, Codec, Frame, Open, Performative};
+use oasis_amqp::{sasl, AmqpFrame, Attach, Begin, Codec, Frame, Open, Performative, Role};
 use serde_bytes::Bytes;
 use tokio;
 use tokio::net::TcpStream;
@@ -45,6 +45,34 @@ async fn main() {
         body: &[],
     });
 
+    println!("send begin");
     transport.send(begin).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await);
+
+    let attach = Frame::Amqp(AmqpFrame {
+        channel: 0,
+        extended_header: None,
+        performative: Performative::Attach(Attach {
+            name: "rpcqueue",
+            handle: 0,
+            role: Role::Sender,
+            snd_settle_mode: None,
+            rcv_settle_mode: None,
+            source: None,
+            target: None,
+            unsettled: None,
+            incomplete_unsettled: None,
+            initial_delivery_count: None,
+            max_message_size: None,
+            offered_capabilities: None,
+            desired_capabilities: None,
+            properties: None,
+        }),
+        body: &[],
+    });
+
+    println!("send attach");
+    transport.send(attach).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await);
     println!("read: {:#?}\n", transport.next().await);
 }
