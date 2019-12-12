@@ -14,8 +14,8 @@ async fn main() {
 
     println!("send header");
     transport.send(Frame::Header(Protocol::Sasl)).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await);
-    println!("read: {:#?}\n", transport.next().await);
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
 
     let init = Frame::Sasl(sasl::Frame::Init(sasl::Init {
         mechanism: sasl::Mechanism::Plain,
@@ -25,8 +25,8 @@ async fn main() {
 
     println!("send init");
     transport.send(init).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await);
-    println!("read: {:#?}\n", transport.next().await);
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
 
     let open = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -43,7 +43,7 @@ async fn main() {
 
     println!("send open");
     transport.send(open).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await);
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
 
     let begin = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -60,7 +60,7 @@ async fn main() {
 
     println!("send begin");
     transport.send(begin).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await);
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
 
     let attach = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -86,5 +86,5 @@ async fn main() {
 
     println!("send attach");
     transport.send(attach).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await);
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
 }
