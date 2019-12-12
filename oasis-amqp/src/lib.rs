@@ -13,39 +13,30 @@ use tokio_util::codec::{Decoder, Encoder};
 mod de;
 mod ser;
 
-#[derive(Default)]
-pub struct Codec {
-    sending: Option<Protocol>,
-    receiving: Option<Protocol>,
-}
+pub struct Codec;
 
 impl Decoder for Codec {
     type Item = BytesFrame;
     type Error = Error;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        if self.receiving.is_none() {
-            let header = src.split_to(8);
-            self.receiving = Some(Protocol::from_bytes(&header));
-        }
-
         if src.len() < 4 {
             return Ok(None);
         }
 
-        let len = u32::from_be_bytes((&src[..4]).try_into().unwrap()) as usize;
-        println!("received {} bytes: {:?}", len, &src[..len]);
-        if src.len() < len {
-            return Ok(None);
-        }
+        let bytes = if &src[..4] == b"AMQP" && src.len() >= 8 {
+            src.split_to(8).freeze()
+        } else {
+            let len = u32::from_be_bytes((&src[..4]).try_into().unwrap()) as usize;
+            println!("received {} bytes: {:?}", len, &src[..len]);
+            if src.len() >= len {
+                src.split_to(len).freeze().split_off(4)
+            } else {
+                return Ok(None);
+            }
+        };
 
-        let bytes = src.split_to(len).freeze();
-        let frame = Frame::decode(&bytes[4..])?;
-        if let Frame::Sasl(sasl::Frame::Outcome(_)) = frame {
-            self.receiving = None;
-        }
-
-        let frame = unsafe { mem::transmute(frame) };
+        let frame = unsafe { mem::transmute(Frame::decode(&bytes)?) };
         Ok(Some(BytesFrame { bytes, frame }))
     }
 }
@@ -55,12 +46,6 @@ impl Encoder for Codec {
     type Error = Error;
 
     fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        let proto = item.protocol();
-        if self.sending != Some(proto) {
-            dst.put(proto.header());
-            self.sending = Some(proto);
-        }
-
         let buf = item.to_vec();
         println!("writing {:?}", buf);
         dst.put(&*buf);
@@ -83,11 +68,16 @@ impl std::fmt::Debug for BytesFrame {
 #[derive(Debug)]
 pub enum Frame<'a> {
     Amqp(AmqpFrame<'a>),
+    Header(Protocol),
     Sasl(sasl::Frame<'a>),
 }
 
 impl<'a> Frame<'a> {
     pub fn decode(buf: &'a [u8]) -> Result<Self, Error> {
+        if &buf[..4] == b"AMQP" {
+            return Ok(Frame::Header(Protocol::from_bytes(buf)));
+        }
+
         let doff = buf[0];
         if doff < 2 {
             return Err(Error::InvalidData);
@@ -109,7 +99,7 @@ impl<'a> Frame<'a> {
 
     pub fn to_vec(&self) -> Vec<u8> {
         let mut buf = vec![0; 8];
-        buf[4] = 2; // doff
+
         match self {
             Frame::Amqp(f) => {
                 buf[5] = 0x00;
@@ -117,27 +107,25 @@ impl<'a> Frame<'a> {
                 buf.extend_from_slice(f.body);
                 (&mut buf[6..8]).copy_from_slice(&f.channel.to_be_bytes()[..]);
             }
+            Frame::Header(p) => {
+                buf.copy_from_slice(p.header());
+                return buf;
+            }
             Frame::Sasl(f) => {
                 buf[5] = 0x01;
                 ser::into_bytes(f, &mut buf).unwrap();
             }
         }
 
+        buf[4] = 2; // doff
         let len = buf.len() as u32;
         (&mut buf[..4]).copy_from_slice(&len.to_be_bytes()[..]);
         buf
     }
-
-    fn protocol(&self) -> Protocol {
-        match self {
-            Frame::Sasl(_) => Protocol::Sasl,
-            Frame::Amqp(_) => Protocol::Amqp,
-        }
-    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
-enum Protocol {
+pub enum Protocol {
     Sasl,
     Amqp,
 }

@@ -1,5 +1,7 @@
 use futures::{sink::SinkExt, stream::StreamExt};
-use oasis_amqp::{sasl, AmqpFrame, Attach, Begin, Codec, Frame, Open, Performative, Role};
+use oasis_amqp::{
+    sasl, AmqpFrame, Attach, Begin, Codec, Frame, Open, Performative, Protocol, Role,
+};
 use serde_bytes::Bytes;
 use tokio;
 use tokio::net::TcpStream;
@@ -8,7 +10,12 @@ use tokio_util::codec::Framed;
 #[tokio::main]
 async fn main() {
     let stream = TcpStream::connect("127.0.0.1:10006").await.unwrap();
-    let mut transport = Framed::new(stream, Codec::default());
+    let mut transport = Framed::new(stream, Codec);
+
+    println!("send header");
+    transport.send(Frame::Header(Protocol::Sasl)).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await);
+    println!("read: {:#?}\n", transport.next().await);
 
     let init = Frame::Sasl(sasl::Frame::Init(sasl::Init {
         mechanism: sasl::Mechanism::Plain,
@@ -16,7 +23,9 @@ async fn main() {
         hostname: None,
     }));
 
+    println!("send init");
     transport.send(init).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await);
     println!("read: {:#?}\n", transport.next().await);
 
     let open = Frame::Amqp(AmqpFrame {
@@ -29,6 +38,10 @@ async fn main() {
         body: &[],
     });
 
+    println!("send header");
+    transport.send(Frame::Header(Protocol::Amqp)).await.unwrap();
+
+    println!("send open");
     transport.send(open).await.unwrap();
     println!("read: {:#?}\n", transport.next().await);
 
@@ -73,6 +86,5 @@ async fn main() {
 
     println!("send attach");
     transport.send(attach).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await);
     println!("read: {:#?}\n", transport.next().await);
 }
