@@ -11,6 +11,7 @@ use tokio_util::codec::Framed;
 #[tokio::main]
 async fn main() {
     let stream = TcpStream::connect("127.0.0.1:10006").await.unwrap();
+    println!("local addr {:?}", stream.local_addr());
     let mut transport = Framed::new(stream, Codec);
 
     println!("send header");
@@ -91,7 +92,7 @@ async fn main() {
         body: &[],
     });
 
-    println!("send attach");
+    println!("send attach: {:#?}", attach);
     transport.send(attach).await.unwrap();
     println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
 }
