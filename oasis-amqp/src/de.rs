@@ -49,6 +49,19 @@ impl<'de> Deserializer<'de> {
         Ok(u32::from_be_bytes(val.try_into()?))
     }
 
+    fn parse_bool(&mut self) -> Result<bool> {
+        Ok(match self.next_constructor()? {
+            0x56 => match self.next()? {
+                0x01 => true,
+                0x00 => false,
+                _ => return Err(Error::InvalidData),
+            },
+            0x41 => true,
+            0x42 => false,
+            _ => return Err(Error::InvalidData),
+        })
+    }
+
     fn parse_u64(&mut self) -> Result<u64> {
         Ok(match self.next()? {
             0x44 => 0,
@@ -147,19 +160,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.next_constructor()? {
-            0x56 => {
-                let val = self.next()?;
-                visitor.visit_bool(match val {
-                    0x01 => true,
-                    0x00 => false,
-                    _ => return Err(Error::InvalidData),
-                })
-            }
-            0x41 => visitor.visit_bool(true),
-            0x42 => visitor.visit_bool(false),
-            _ => return Err(Error::InvalidData),
-        }
+        visitor.visit_bool(self.parse_bool()?)
     }
 
     fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value>
@@ -447,6 +448,10 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         V: Visitor<'de>,
     {
         match self.peek_constructor()? {
+            0x56 | 0x41 | 0x42 => match self.parse_bool()? {
+                true => visitor.visit_u64(1),
+                false => visitor.visit_u64(0),
+            },
             0x50 => {
                 self.assume(0x50)?;
                 let id = self.next()?;
