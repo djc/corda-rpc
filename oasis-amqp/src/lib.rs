@@ -230,8 +230,8 @@ pub struct Attach<'a> {
     pub role: Role,
     pub snd_settle_mode: Option<SenderSettleMode>,
     pub rcv_settle_mode: Option<ReceiverSettleMode>,
-    pub source: Option<&'a str>,
-    pub target: Option<&'a str>,
+    pub source: Option<Source<'a>>,
+    pub target: Option<Target<'a>>,
     pub unsettled: Option<HashMap<&'a [u8], u32>>,
     pub incomplete_unsettled: Option<bool>,
     pub initial_delivery_count: Option<u32>,
@@ -259,10 +259,109 @@ pub struct AmqpError<'a> {
     info: Option<Vec<(&'a [u8], &'a [u8])>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize)]
 pub enum Role {
     Sender,
     Receiver,
+}
+
+impl Serialize for Role {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_bool(match self {
+            Role::Sender => false,
+            Role::Receiver => true,
+        })
+    }
+}
+
+#[amqp(descriptor("amqp:source:list", 0x00000000_00000028))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:source:list")]
+pub struct Source<'a> {
+    pub address: Option<&'a str>,
+    pub durable: Option<u32>,
+    pub expiry_policy: Option<ExpiryPolicy>,
+    pub timeout: Option<u32>,
+    pub dynamic: Option<bool>,
+    pub dynamic_node_properties: Option<Vec<(&'a str, &'a str)>>,
+    pub distribution_mode: Option<DistributionMode>,
+    pub filter: Option<Vec<(&'a str, &'a str)>>,
+    pub default_outcome: Option<Outcome>,
+    pub outcomes: Option<Vec<&'a str>>,
+    pub capabilities: Option<Vec<&'a str>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum DistributionMode {
+    Move,
+    Copy,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Outcome {
+    Received(Received),
+    Accepted(Accepted),
+    Rejected(Rejected),
+    Released(Released),
+    Modified(Modified),
+    Declared(Declared),
+}
+
+#[amqp(descriptor("amqp:received:list", 0x00000000_00000023))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:received:list")]
+pub struct Received {}
+
+#[amqp(descriptor("amqp:accepted:list", 0x00000000_00000024))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:accepted:list")]
+pub struct Accepted {}
+
+#[amqp(descriptor("amqp:rejected:list", 0x00000000_00000025))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:rejected:list")]
+pub struct Rejected {}
+
+#[amqp(descriptor("amqp:released:list", 0x00000000_00000026))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:released:list")]
+pub struct Released {}
+
+#[amqp(descriptor("amqp:modified:list", 0x00000000_00000027))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:modified:list")]
+pub struct Modified {}
+
+#[amqp(descriptor("amqp:declared:list", 0x00000000_00000033))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:declared:list")]
+pub struct Declared {}
+
+#[amqp(descriptor("amqp:target:list", 0x00000000_00000029))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:target:list")]
+pub struct Target<'a> {
+    pub address: Option<&'a str>,
+    pub durable: Option<u32>,
+    pub expiry_policy: Option<ExpiryPolicy>,
+    pub timeout: Option<u32>,
+    pub dynamic: Option<bool>,
+    pub dynamic_node_properties: Option<Vec<(&'a str, &'a str)>>,
+    pub capabilities: Option<Vec<&'a str>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ExpiryPolicy {
+    LinkDetach,
+    SessionEnd,
+    ConnectionClose,
+    Never,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
