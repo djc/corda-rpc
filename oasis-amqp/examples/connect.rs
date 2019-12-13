@@ -1,6 +1,7 @@
 use futures::{sink::SinkExt, stream::StreamExt};
 use oasis_amqp::{
-    sasl, AmqpFrame, Attach, Begin, Codec, Frame, Open, Performative, Protocol, Role,
+    sasl, AmqpFrame, Attach, Begin, Codec, Frame, Open, Performative, Protocol, Role, Source,
+    Target,
 };
 use serde_bytes::Bytes;
 use tokio;
@@ -66,13 +67,19 @@ async fn main() {
         channel: 0,
         extended_header: None,
         performative: Performative::Attach(Attach {
-            name: "rpcqueue",
+            name: "vx-web-0",
             handle: 0,
             role: Role::Sender,
             snd_settle_mode: None,
             rcv_settle_mode: None,
-            source: None,
-            target: None,
+            source: Some(Source {
+                address: Some("vx-web"),
+                ..Default::default()
+            }),
+            target: Some(Target {
+                address: Some("RPC"),
+                ..Default::default()
+            }),
             unsettled: None,
             incomplete_unsettled: None,
             initial_delivery_count: None,
