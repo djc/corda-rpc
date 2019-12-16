@@ -188,6 +188,7 @@ pub enum Performative<'a> {
     Begin(Begin<'a>),
     Attach(Attach<'a>),
     Transfer(Transfer<'a>),
+    Flow(Flow<'a>),
     Detach(Detach<'a>),
     Close(Close<'a>),
 }
@@ -240,6 +241,24 @@ pub struct Attach<'a> {
     pub max_message_size: Option<u64>,
     pub offered_capabilities: Option<Vec<&'a str>>,
     pub desired_capabilities: Option<Vec<&'a str>>,
+    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
+}
+
+#[amqp(descriptor("amqp:flow:list", 0x00000000_00000013))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:flow:list")]
+pub struct Flow<'a> {
+    pub next_incoming_id: Option<u32>,
+    pub incoming_window: u32,
+    pub next_outgoing_id: u32,
+    pub outgoing_window: u32,
+    pub handle: Option<u32>,
+    pub delivery_count: Option<u32>,
+    pub link_credit: Option<u32>,
+    pub available: Option<u32>,
+    pub drain: Option<bool>,
+    pub echo: Option<bool>,
+    #[serde(borrow)]
     pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
 }
 
