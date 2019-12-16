@@ -187,6 +187,8 @@ pub enum Performative<'a> {
     Open(Open<'a>),
     Begin(Begin<'a>),
     Attach(Attach<'a>),
+    Transfer(Transfer<'a>),
+    Detach(Detach<'a>),
     Close(Close<'a>),
 }
 
@@ -239,6 +241,33 @@ pub struct Attach<'a> {
     pub offered_capabilities: Option<Vec<&'a str>>,
     pub desired_capabilities: Option<Vec<&'a str>>,
     pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
+}
+
+#[amqp(descriptor("amqp:transfer:list", 0x00000000_00000014))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:transfer:list")]
+pub struct Transfer<'a> {
+    pub handle: u32,
+    pub delivery_id: Option<u32>,
+    pub delivery_tag: Option<&'a [u8]>,
+    pub message_format: Option<u32>,
+    pub settled: Option<bool>,
+    pub more: Option<bool>,
+    pub rcv_settle_mode: Option<ReceiverSettleMode>,
+    pub state: Option<DeliveryState>,
+    pub resume: Option<bool>,
+    pub aborted: Option<bool>,
+    pub batchable: Option<bool>,
+}
+
+#[amqp(descriptor("amqp:detach:list", 0x00000000_00000016))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:detach:list")]
+pub struct Detach<'a> {
+    pub handle: u32,
+    pub closed: Option<bool>,
+    #[serde(borrow)]
+    pub error: Option<AmqpError<'a>>,
 }
 
 #[amqp(descriptor("amqp:close:list", 0x00000000_00000018))]
@@ -303,6 +332,18 @@ pub enum DistributionMode {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
+pub enum DeliveryState {
+    Received(Received),
+    Accepted(Accepted),
+    Rejected(Rejected),
+    Released(Released),
+    Modified(Modified),
+    Declared(Declared),
+    TransactionalState(TransactionalState),
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Outcome {
     Received(Received),
     Accepted(Accepted),
@@ -341,6 +382,11 @@ pub struct Modified {}
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "amqp:declared:list")]
 pub struct Declared {}
+
+#[amqp(descriptor("amqp:transactional-state:list", 0x00000000_00000034))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:transactional-state:list")]
+pub struct TransactionalState {}
 
 #[amqp(descriptor("amqp:target:list", 0x00000000_00000029))]
 #[derive(Debug, Default, Deserialize, Serialize)]
