@@ -72,7 +72,7 @@ async fn main() {
                 ..Default::default()
             }),
             target: Some(Target {
-                address: Some("RPC"),
+                address: Some("rpc.server"),
                 ..Default::default()
             }),
             unsettled: None,
