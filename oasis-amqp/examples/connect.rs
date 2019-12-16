@@ -1,8 +1,5 @@
 use futures::{sink::SinkExt, stream::StreamExt};
-use oasis_amqp::{
-    sasl, AmqpFrame, Attach, Begin, Codec, Frame, Open, Performative, Protocol, Role, Source,
-    Target, Transfer,
-};
+use oasis_amqp::{amqp, sasl, Codec, Frame, Protocol};
 use serde_bytes::Bytes;
 use tokio;
 use tokio::net::TcpStream;
@@ -28,10 +25,10 @@ async fn main() {
     let _outcome = transport.next().await.unwrap().unwrap();
     let _header = transport.next().await.unwrap().unwrap();
 
-    let open = Frame::Amqp(AmqpFrame {
+    let open = Frame::Amqp(amqp::Frame {
         channel: 0,
         extended_header: None,
-        performative: Performative::Open(Open {
+        performative: amqp::Performative::Open(amqp::Open {
             container_id: "vx-web",
             ..Default::default()
         }),
@@ -42,10 +39,10 @@ async fn main() {
     transport.send(open).await.unwrap();
     let _opened = transport.next().await.unwrap().unwrap();
 
-    let begin = Frame::Amqp(AmqpFrame {
+    let begin = Frame::Amqp(amqp::Frame {
         channel: 0,
         extended_header: None,
-        performative: Performative::Begin(Begin {
+        performative: amqp::Performative::Begin(amqp::Begin {
             remote_channel: None,
             next_outgoing_id: 1,
             incoming_window: 8,
@@ -58,20 +55,20 @@ async fn main() {
     transport.send(begin).await.unwrap();
     let _begun = transport.next().await.unwrap().unwrap();
 
-    let attach = Frame::Amqp(AmqpFrame {
+    let attach = Frame::Amqp(amqp::Frame {
         channel: 0,
         extended_header: None,
-        performative: Performative::Attach(Attach {
+        performative: amqp::Performative::Attach(amqp::Attach {
             name: "vx-web-0",
             handle: 0,
-            role: Role::Sender,
+            role: amqp::Role::Sender,
             snd_settle_mode: None,
             rcv_settle_mode: None,
-            source: Some(Source {
+            source: Some(amqp::Source {
                 address: Some("vx-web"),
                 ..Default::default()
             }),
-            target: Some(Target {
+            target: Some(amqp::Target {
                 address: Some("rpc.server"),
                 ..Default::default()
             }),
@@ -92,10 +89,10 @@ async fn main() {
     let flow = transport.next().await.unwrap().unwrap();
     println!("read: {:#?}\n", flow);
 
-    let transfer = Frame::Amqp(AmqpFrame {
+    let transfer = Frame::Amqp(amqp::Frame {
         channel: 0,
         extended_header: None,
-        performative: Performative::Transfer(Transfer {
+        performative: amqp::Performative::Transfer(amqp::Transfer {
             handle: 0,
             delivery_id: Some(0),
             ..Default::default()
@@ -106,5 +103,5 @@ async fn main() {
     println!("send transfer: {:#?}", transfer);
     transport.send(transfer).await.unwrap();
     let transferred = transport.next().await;
-    println!("read: {:#?}\n", transferred.unwrap().unwrap());
+    println!("read: {:#?}\n", transferred);
 }
