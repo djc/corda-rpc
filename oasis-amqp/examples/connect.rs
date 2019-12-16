@@ -1,7 +1,7 @@
 use futures::{sink::SinkExt, stream::StreamExt};
 use oasis_amqp::{
     sasl, AmqpFrame, Attach, Begin, Codec, Frame, Open, Performative, Protocol, Role, Source,
-    Target,
+    Target, Transfer,
 };
 use serde_bytes::Bytes;
 use tokio;
@@ -94,5 +94,20 @@ async fn main() {
 
     println!("send attach: {:#?}", attach);
     transport.send(attach).await.unwrap();
+    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+
+    let transfer = Frame::Amqp(AmqpFrame {
+        channel: 0,
+        extended_header: None,
+        performative: Performative::Transfer(Transfer {
+            handle: 0,
+            delivery_id: Some(0),
+            ..Default::default()
+        }),
+        body: &[],
+    });
+
+    println!("send transfer: {:#?}", transfer);
+    transport.send(transfer).await.unwrap();
     println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
 }
