@@ -47,7 +47,7 @@ impl Encoder for Codec {
 
     fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
         let buf = item.to_vec();
-        println!("writing {:?}", buf);
+        println!("writing {} bytes: {:?}", buf.len(), buf);
         dst.put(&*buf);
         Ok(())
     }
