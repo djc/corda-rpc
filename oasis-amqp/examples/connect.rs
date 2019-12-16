@@ -14,10 +14,9 @@ async fn main() {
     println!("local addr {:?}", stream.local_addr());
     let mut transport = Framed::new(stream, Codec);
 
-    println!("send header");
     transport.send(Frame::Header(Protocol::Sasl)).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    let _header = transport.next().await.unwrap().unwrap();
+    let _mechanisms = transport.next().await.unwrap().unwrap();
 
     let init = Frame::Sasl(sasl::Frame::Init(sasl::Init {
         mechanism: sasl::Mechanism::Plain,
@@ -25,10 +24,9 @@ async fn main() {
         hostname: None,
     }));
 
-    println!("send init");
     transport.send(init).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    let _outcome = transport.next().await.unwrap().unwrap();
+    let _header = transport.next().await.unwrap().unwrap();
 
     let open = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -40,12 +38,9 @@ async fn main() {
         body: &[],
     });
 
-    println!("send header");
     transport.send(Frame::Header(Protocol::Amqp)).await.unwrap();
-
-    println!("send open");
     transport.send(open).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    let _opened = transport.next().await.unwrap().unwrap();
 
     let begin = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -60,9 +55,8 @@ async fn main() {
         body: &[],
     });
 
-    println!("send begin");
     transport.send(begin).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    let _begun = transport.next().await.unwrap().unwrap();
 
     let attach = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -94,7 +88,9 @@ async fn main() {
 
     println!("send attach: {:#?}", attach);
     transport.send(attach).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    let _attached = transport.next().await.unwrap().unwrap();
+    let flow = transport.next().await.unwrap().unwrap();
+    println!("read: {:#?}\n", flow);
 
     let transfer = Frame::Amqp(AmqpFrame {
         channel: 0,
@@ -109,5 +105,6 @@ async fn main() {
 
     println!("send transfer: {:#?}", transfer);
     transport.send(transfer).await.unwrap();
-    println!("read: {:#?}\n", transport.next().await.unwrap().unwrap());
+    let transferred = transport.next().await;
+    println!("read: {:#?}\n", transferred.unwrap().unwrap());
 }
