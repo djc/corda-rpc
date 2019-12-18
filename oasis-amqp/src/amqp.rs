@@ -3,13 +3,15 @@ use std::convert::TryInto;
 
 use oasis_amqp_derive::amqp;
 use serde::{self, Deserialize, Serialize};
+use serde_bytes::Bytes;
 
 use crate::{de, Described};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Frame<'a> {
     pub channel: u16,
-    pub extended_header: Option<&'a [u8]>,
+    #[serde(borrow)]
+    pub extended_header: Option<&'a Bytes>,
     pub performative: Performative<'a>,
     pub message: Option<Message<'a>>,
 }
@@ -21,7 +23,7 @@ impl<'a> Frame<'a> {
 
         let (extended, buf) = buf.split_at((doff - 2) as usize);
         let extended_header = if !extended.is_empty() {
-            Some(extended)
+            Some(Bytes::new(extended))
         } else {
             None
         };
@@ -68,7 +70,7 @@ pub struct Header {
 #[serde(rename = "amqp:properties:list")]
 pub struct Properties<'a> {
     pub message_id: Option<&'a str>,
-    pub user_id: Option<&'a [u8]>,
+    pub user_id: Option<&'a Bytes>,
     pub to: Option<&'a str>,
     pub subject: Option<&'a str>,
     pub reply_to: Option<&'a str>,
@@ -93,7 +95,7 @@ pub enum Body<'a> {
 #[amqp(descriptor("amqp:data:binary", 0x00000000_00000075))]
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename = "amqp:data:binary")]
-pub struct Data<'a>(pub &'a [u8]);
+pub struct Data<'a>(#[serde(borrow)] pub &'a Bytes);
 
 #[amqp(descriptor("amqp:amqp-sequence:list", 0x00000000_00000076))]
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -159,13 +161,13 @@ pub struct Attach<'a> {
     pub rcv_settle_mode: Option<ReceiverSettleMode>,
     pub source: Option<Source<'a>>,
     pub target: Option<Target<'a>>,
-    pub unsettled: Option<HashMap<&'a [u8], u32>>,
+    pub unsettled: Option<HashMap<&'a Bytes, u32>>,
     pub incomplete_unsettled: Option<bool>,
     pub initial_delivery_count: Option<u32>,
     pub max_message_size: Option<u64>,
     pub offered_capabilities: Option<Vec<&'a str>>,
     pub desired_capabilities: Option<Vec<&'a str>>,
-    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
+    pub properties: Option<Vec<(&'a Bytes, &'a Bytes)>>,
 }
 
 #[amqp(descriptor("amqp:flow:list", 0x00000000_00000013))]
@@ -183,7 +185,7 @@ pub struct Flow<'a> {
     pub drain: Option<bool>,
     pub echo: Option<bool>,
     #[serde(borrow)]
-    pub properties: Option<Vec<(&'a [u8], &'a [u8])>>,
+    pub properties: Option<Vec<(&'a Bytes, &'a Bytes)>>,
 }
 
 #[amqp(descriptor("amqp:transfer:list", 0x00000000_00000014))]
@@ -192,7 +194,8 @@ pub struct Flow<'a> {
 pub struct Transfer<'a> {
     pub handle: u32,
     pub delivery_id: Option<u32>,
-    pub delivery_tag: Option<&'a [u8]>,
+    #[serde(borrow)]
+    pub delivery_tag: Option<&'a Bytes>,
     pub message_format: Option<u32>,
     pub settled: Option<bool>,
     pub more: Option<bool>,
@@ -228,7 +231,7 @@ pub struct AmqpError<'a> {
     #[serde(borrow)]
     condition: &'a str,
     description: &'a str,
-    info: Option<Vec<(&'a [u8], &'a [u8])>>,
+    info: Option<Vec<(&'a Bytes, &'a Bytes)>>,
 }
 
 #[derive(Debug, Deserialize)]

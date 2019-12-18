@@ -127,7 +127,7 @@ async fn main() {
                 ..Default::default()
             }),
             application_properties: Some(properties),
-            body: Some(amqp::Body::Data(amqp::Data(b""))),
+            body: Some(amqp::Body::Data(amqp::Data(Bytes::new(b"")))),
             ..Default::default()
         }),
     });
