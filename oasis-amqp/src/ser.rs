@@ -207,11 +207,21 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
         Ok(())
     }
 
-    fn serialize_newtype_struct<T>(self, _name: &'static str, _value: &T) -> Result<()>
+    fn serialize_newtype_struct<T>(self, name: &'static str, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        let bytes = name.as_bytes();
+        assert!(bytes.len() < 256);
+
+        // Descriptor in 1-byte length string format
+        self.output.push(0x00);
+        self.output.push(0xa3);
+        self.output.push(bytes.len() as u8);
+        self.output.extend_from_slice(bytes);
+
+        value.serialize(self)?;
+        Ok(())
     }
 
     fn serialize_newtype_variant<T>(
