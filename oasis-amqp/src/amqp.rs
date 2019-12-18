@@ -11,7 +11,7 @@ pub struct Frame<'a> {
     pub channel: u16,
     pub extended_header: Option<&'a [u8]>,
     pub performative: Performative<'a>,
-    pub body: &'a [u8],
+    pub message: Option<Message<'a>>,
 }
 
 impl<'a> Frame<'a> {
@@ -35,10 +35,75 @@ impl<'a> Frame<'a> {
             channel,
             extended_header,
             performative,
-            body: &[],
+            message: None,
         })
     }
 }
+
+#[derive(Debug, Default, Deserialize, Serialize)]
+pub struct Message<'a> {
+    pub header: Option<Header>,
+    #[serde(borrow)]
+    pub delivery_annotations: Option<HashMap<&'a str, &'a str>>,
+    pub message_annotations: Option<HashMap<&'a str, &'a str>>,
+    pub properties: Option<Properties<'a>>,
+    pub application_properties: Option<HashMap<&'a str, Any<'a>>>,
+    pub body: Option<Body<'a>>,
+    pub footer: Option<HashMap<&'a str, &'a str>>,
+}
+
+#[amqp(descriptor("amqp:header:list", 0x00000000_00000070))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:header:list")]
+pub struct Header {
+    pub durable: Option<bool>,
+    pub priority: Option<u8>,
+    pub ttl: Option<u32>, // ms
+    pub first_acquirer: Option<bool>,
+    pub delivery_count: Option<u32>,
+}
+
+#[amqp(descriptor("amqp:properties:list", 0x00000000_00000073))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:properties:list")]
+pub struct Properties<'a> {
+    pub message_id: Option<&'a str>,
+    pub user_id: Option<&'a [u8]>,
+    pub to: Option<&'a str>,
+    pub subject: Option<&'a str>,
+    pub reply_to: Option<&'a str>,
+    pub correlation_id: Option<&'a str>,
+    pub content_type: Option<&'a str>,
+    pub content_encoding: Option<&'a str>,
+    pub absolute_expiry_time: Option<u32>,
+    pub creation_time: Option<u32>,
+    pub group_id: Option<&'a str>,
+    pub group_sequence: Option<u32>,
+    pub reply_to_group_id: Option<&'a str>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Body<'a> {
+    #[serde(borrow)]
+    Data(Data<'a>),
+    Sequence(Sequence),
+    Value(Value),
+}
+
+#[amqp(descriptor("amqp:data:binary", 0x00000000_00000075))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:data:binary")]
+pub struct Data<'a>(pub &'a [u8]);
+
+#[amqp(descriptor("amqp:amqp-sequence:list", 0x00000000_00000076))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:amqp-sequence:list")]
+pub struct Sequence {}
+
+#[amqp(descriptor("amqp:value:*", 0x00000000_00000077))]
+#[derive(Debug, Default, Deserialize, Serialize)]
+#[serde(rename = "amqp:value:*")]
+pub struct Value {}
 
 #[amqp]
 #[derive(Debug, Serialize)]
@@ -299,4 +364,23 @@ pub enum SenderSettleMode {
 pub enum ReceiverSettleMode {
     First,
     Second,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum Any<'a> {
+    None,
+    Bool(bool),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    I8(i8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    F32(f32),
+    F64(f64),
+    Bytes(&'a [u8]),
+    Symbol(&'a str),
+    Str(&'a str),
 }

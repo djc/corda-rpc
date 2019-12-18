@@ -45,7 +45,7 @@ impl Encoder for Codec {
     type Error = Error;
 
     fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        let buf = item.to_vec();
+        let buf = item.to_vec().unwrap();
         println!("writing {} bytes: {:?}", buf.len(), buf);
         dst.put(&*buf);
         Ok(())
@@ -96,19 +96,27 @@ impl<'a> Frame<'a> {
         }
     }
 
-    pub fn to_vec(&self) -> Vec<u8> {
+    pub fn to_vec(&self) -> Result<Vec<u8>, Error> {
         let mut buf = vec![0; 8];
 
         match self {
             Frame::Amqp(f) => {
                 buf[5] = 0x00;
-                ser::into_bytes(&f.performative, &mut buf).unwrap();
-                buf.extend_from_slice(f.body);
+                ser::into_bytes(&f.performative, &mut buf)?;
+                if let Some(msg) = &f.message {
+                    ser::into_bytes(&msg.header, &mut buf)?;
+                    ser::into_bytes(&msg.delivery_annotations, &mut buf)?;
+                    ser::into_bytes(&msg.message_annotations, &mut buf)?;
+                    ser::into_bytes(&msg.properties, &mut buf)?;
+                    ser::into_bytes(&msg.application_properties, &mut buf)?;
+                    ser::into_bytes(&msg.body, &mut buf)?;
+                    ser::into_bytes(&msg.footer, &mut buf)?;
+                }
                 (&mut buf[6..8]).copy_from_slice(&f.channel.to_be_bytes()[..]);
             }
             Frame::Header(p) => {
                 buf.copy_from_slice(p.header());
-                return buf;
+                return Ok(buf);
             }
             Frame::Sasl(f) => {
                 buf[5] = 0x01;
@@ -119,7 +127,7 @@ impl<'a> Frame<'a> {
         buf[4] = 2; // doff
         let len = buf.len() as u32;
         (&mut buf[..4]).copy_from_slice(&len.to_be_bytes()[..]);
-        buf
+        Ok(buf)
     }
 }
 

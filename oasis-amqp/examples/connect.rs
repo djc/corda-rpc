@@ -1,3 +1,7 @@
+use std::collections::HashMap;
+use std::convert::TryFrom;
+use std::time::SystemTime;
+
 use futures::{sink::SinkExt, stream::StreamExt};
 use oasis_amqp::{amqp, sasl, Codec, Frame, Protocol};
 use serde_bytes::Bytes;
@@ -32,7 +36,7 @@ async fn main() {
             container_id: "vx-web",
             ..Default::default()
         }),
-        body: &[],
+        message: None,
     });
 
     transport.send(Frame::Header(Protocol::Amqp)).await.unwrap();
@@ -49,7 +53,7 @@ async fn main() {
             outgoing_window: 8,
             ..Default::default()
         }),
-        body: &[],
+        message: None,
     });
 
     transport.send(begin).await.unwrap();
@@ -80,7 +84,7 @@ async fn main() {
             desired_capabilities: None,
             properties: None,
         }),
-        body: &[],
+        message: None,
     });
 
     println!("send attach: {:#?}", attach);
@@ -89,15 +93,43 @@ async fn main() {
     let flow = transport.next().await.unwrap().unwrap();
     println!("read: {:#?}\n", flow);
 
+    let now = SystemTime::now();
+    let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+    let timestamp = i64::try_from(timestamp.as_millis()).unwrap();
+
+    let mut properties = HashMap::new();
+    properties.insert("tag", amqp::Any::I32(0));
+    properties.insert("method-name", amqp::Any::Str("networkMapSnapshot"));
+    properties.insert(
+        "rpc-id",
+        amqp::Any::Str("c662b784-d9d1-4320-9c39-62bffa3975b6"),
+    );
+    properties.insert("rpc-id-timestamp", amqp::Any::I64(timestamp));
+    properties.insert(
+        "rpc-session-id",
+        amqp::Any::Str("2ac4ccb9-0da0-4ddc-8db7-cee4bb0115a1"),
+    );
+    properties.insert("rpc-session-id-timestamp", amqp::Any::I64(timestamp));
+
     let transfer = Frame::Amqp(amqp::Frame {
         channel: 0,
         extended_header: None,
         performative: amqp::Performative::Transfer(amqp::Transfer {
             handle: 0,
             delivery_id: Some(0),
+            message_format: Some(0),
             ..Default::default()
         }),
-        body: &[],
+        message: Some(amqp::Message {
+            properties: Some(amqp::Properties {
+                message_id: Some("rpc.server.vxdir.6543431538375707788"),
+                reply_to: Some("vx-web"),
+                ..Default::default()
+            }),
+            application_properties: Some(properties),
+            body: Some(amqp::Body::Data(amqp::Data(b""))),
+            ..Default::default()
+        }),
     });
 
     println!("send transfer: {:#?}", transfer);
