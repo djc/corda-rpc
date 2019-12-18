@@ -78,7 +78,7 @@ async fn main() {
             }),
             unsettled: None,
             incomplete_unsettled: None,
-            initial_delivery_count: None,
+            initial_delivery_count: Some(0),
             max_message_size: None,
             offered_capabilities: None,
             desired_capabilities: None,
