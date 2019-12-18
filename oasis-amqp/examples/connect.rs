@@ -117,6 +117,7 @@ async fn main() {
         performative: amqp::Performative::Transfer(amqp::Transfer {
             handle: 0,
             delivery_id: Some(0),
+            delivery_tag: Some(Bytes::new(b"foobar!")),
             message_format: Some(0),
             ..Default::default()
         }),
