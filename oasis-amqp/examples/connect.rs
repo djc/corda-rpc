@@ -87,11 +87,9 @@ async fn main() {
         message: None,
     });
 
-    println!("send attach: {:#?}", attach);
     transport.send(attach).await.unwrap();
     let _attached = transport.next().await.unwrap().unwrap();
-    let flow = transport.next().await.unwrap().unwrap();
-    println!("read: {:#?}\n", flow);
+    let _flow = transport.next().await.unwrap().unwrap();
 
     let now = SystemTime::now();
     let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
@@ -135,6 +133,6 @@ async fn main() {
 
     println!("send transfer: {:#?}", transfer);
     transport.send(transfer).await.unwrap();
-    let transferred = transport.next().await;
+    let transferred = transport.next().await.unwrap().unwrap();
     println!("read: {:#?}\n", transferred);
 }
