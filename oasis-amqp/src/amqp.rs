@@ -84,7 +84,8 @@ pub struct Properties<'a> {
     pub reply_to_group_id: Option<&'a str>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[amqp]
+#[derive(Debug, Serialize)]
 pub enum Body<'a> {
     #[serde(borrow)]
     Data(Data<'a>),
@@ -276,7 +277,8 @@ pub enum DistributionMode {
     Copy,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[amqp]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum DeliveryState {
     Received(Received),
@@ -288,7 +290,8 @@ pub enum DeliveryState {
     TransactionalState(TransactionalState),
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[amqp]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Outcome {
     Received(Received),
