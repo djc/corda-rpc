@@ -255,8 +255,14 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
         unimplemented!()
     }
 
-    fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
-        unimplemented!()
+    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap> {
+        // Map format with 4-byte length
+        self.output.push(0xd1);
+        self.offsets.push(self.output.len());
+        self.output.extend_from_slice(&[0, 0, 0, 0]);
+        let len = (len.unwrap() * 2) as u32;
+        self.output.extend_from_slice(&len.to_be_bytes());
+        Ok(self)
     }
 
     fn serialize_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeStruct> {
@@ -361,21 +367,25 @@ impl ser::SerializeMap for &'_ mut Serializer<'_> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_key<T>(&mut self, _key: &T) -> Result<()>
+    fn serialize_key<T>(&mut self, key: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        key.serialize(&mut **self)
     }
 
-    fn serialize_value<T>(&mut self, _value: &T) -> Result<()>
+    fn serialize_value<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
+        let offset = self.offsets.pop().unwrap();
+        let len = (self.output.len() - offset - 4) as u32;
+        let dst = &mut self.output[offset..offset + 4];
+        dst.copy_from_slice(&len.to_be_bytes());
         Ok(())
     }
 }
