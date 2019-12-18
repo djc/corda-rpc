@@ -114,8 +114,9 @@ pub enum Performative<'a> {
     Open(Open<'a>),
     Begin(Begin<'a>),
     Attach(Attach<'a>),
-    Transfer(Transfer<'a>),
     Flow(Flow<'a>),
+    Transfer(Transfer<'a>),
+    Disposition(Disposition),
     Detach(Detach<'a>),
     Close(Close<'a>),
 }
@@ -205,6 +206,18 @@ pub struct Transfer<'a> {
     pub resume: Option<bool>,
     pub aborted: Option<bool>,
     pub batchable: Option<bool>,
+}
+
+#[amqp(descriptor("amqp:disposition:list", 0x00000000_00000015))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:disposition:list")]
+pub struct Disposition {
+    pub role: Role,
+    pub first: u32,
+    pub last: Option<u32>,
+    settled: Option<bool>,
+    state: Option<DeliveryState>,
+    batchable: Option<bool>,
 }
 
 #[amqp(descriptor("amqp:detach:list", 0x00000000_00000016))]
