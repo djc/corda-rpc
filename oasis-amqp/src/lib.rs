@@ -104,13 +104,25 @@ impl<'a> Frame<'a> {
                 buf[5] = 0x00;
                 ser::into_bytes(&f.performative, &mut buf)?;
                 if let Some(msg) = &f.message {
-                    ser::into_bytes(&msg.header, &mut buf)?;
-                    ser::into_bytes(&msg.delivery_annotations, &mut buf)?;
-                    ser::into_bytes(&msg.message_annotations, &mut buf)?;
-                    ser::into_bytes(&msg.properties, &mut buf)?;
-                    ser::into_bytes(&msg.application_properties, &mut buf)?;
+                    if let Some(header) = &msg.header {
+                        ser::into_bytes(header, &mut buf)?;
+                    }
+                    if let Some(da) = &msg.delivery_annotations {
+                        ser::into_bytes(da, &mut buf)?;
+                    }
+                    if let Some(ma) = &msg.message_annotations {
+                        ser::into_bytes(ma, &mut buf)?;
+                    }
+                    if let Some(props) = &msg.properties {
+                        ser::into_bytes(props, &mut buf)?;
+                    }
+                    if let Some(ap) = &msg.application_properties {
+                        ser::into_bytes(ap, &mut buf)?;
+                    }
                     ser::into_bytes(&msg.body, &mut buf)?;
-                    ser::into_bytes(&msg.footer, &mut buf)?;
+                    if let Some(footer) = &msg.footer {
+                        ser::into_bytes(footer, &mut buf)?;
+                    }
                 }
                 (&mut buf[6..8]).copy_from_slice(&f.channel.to_be_bytes()[..]);
             }
