@@ -130,7 +130,7 @@ async fn main() {
                 reply_to: Some("vx-web"),
                 ..Default::default()
             }),
-            application_properties: Some(properties),
+            application_properties: Some(amqp::ApplicationProperties(properties)),
             body: Some(amqp::Body::Data(amqp::Data(Bytes::new(b"")))),
             ..Default::default()
         }),

@@ -47,12 +47,12 @@ impl<'a> Frame<'a> {
 pub struct Message<'a> {
     pub header: Option<Header>,
     #[serde(borrow)]
-    pub delivery_annotations: Option<HashMap<&'a str, &'a str>>,
-    pub message_annotations: Option<HashMap<&'a str, &'a str>>,
+    pub delivery_annotations: Option<DeliveryAnnotations<'a>>,
+    pub message_annotations: Option<MessageAnnotations<'a>>,
     pub properties: Option<Properties<'a>>,
-    pub application_properties: Option<HashMap<&'a str, Any<'a>>>,
+    pub application_properties: Option<ApplicationProperties<'a>>,
     pub body: Option<Body<'a>>,
-    pub footer: Option<HashMap<&'a str, &'a str>>,
+    pub footer: Option<Footer<'a>>,
 }
 
 #[amqp(descriptor("amqp:header:list", 0x00000000_00000070))]
@@ -65,6 +65,16 @@ pub struct Header {
     pub first_acquirer: Option<bool>,
     pub delivery_count: Option<u32>,
 }
+
+#[amqp(descriptor("amqp:delivery-annotations:map", 0x00000000_00000071))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:delivery-annotations:map")]
+pub struct DeliveryAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
+
+#[amqp(descriptor("amqp:message-annotations:map", 0x00000000_00000072))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:message-annotations:map")]
+pub struct MessageAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[amqp(descriptor("amqp:properties:list", 0x00000000_00000073))]
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -84,6 +94,11 @@ pub struct Properties<'a> {
     pub group_sequence: Option<u32>,
     pub reply_to_group_id: Option<&'a str>,
 }
+
+#[amqp(descriptor("amqp:application-properties:map", 0x00000000_00000074))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:application-properties:map")]
+pub struct ApplicationProperties<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'a>>);
 
 #[amqp]
 #[derive(Debug, Serialize)]
@@ -108,6 +123,11 @@ pub struct Sequence {}
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename = "amqp:value:*")]
 pub struct Value {}
+
+#[amqp(descriptor("amqp:footer:map", 0x00000000_00000078))]
+#[derive(Debug, Deserialize, Serialize)]
+#[serde(rename = "amqp:footer:map")]
+pub struct Footer<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[amqp]
 #[derive(Debug, Serialize)]
