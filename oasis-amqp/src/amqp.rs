@@ -1,9 +1,10 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryInto;
 
 use oasis_amqp_derive::amqp;
 use serde::{self, Deserialize, Serialize};
-use serde_bytes::Bytes;
+use serde_bytes::{ByteBuf, Bytes};
 
 use crate::{de, Described};
 
@@ -69,7 +70,7 @@ pub struct Header {
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename = "amqp:properties:list")]
 pub struct Properties<'a> {
-    pub message_id: Option<&'a str>,
+    pub message_id: Option<Cow<'a, str>>,
     pub user_id: Option<&'a Bytes>,
     pub to: Option<&'a str>,
     pub subject: Option<&'a str>,
@@ -115,7 +116,7 @@ pub enum Performative<'a> {
     Begin(Begin<'a>),
     Attach(Attach<'a>),
     Flow(Flow<'a>),
-    Transfer(Transfer<'a>),
+    Transfer(Transfer),
     Disposition(Disposition),
     Detach(Detach<'a>),
     Close(Close<'a>),
@@ -193,11 +194,10 @@ pub struct Flow<'a> {
 #[amqp(descriptor("amqp:transfer:list", 0x00000000_00000014))]
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename = "amqp:transfer:list")]
-pub struct Transfer<'a> {
+pub struct Transfer {
     pub handle: u32,
     pub delivery_id: Option<u32>,
-    #[serde(borrow)]
-    pub delivery_tag: Option<&'a Bytes>,
+    pub delivery_tag: Option<ByteBuf>,
     pub message_format: Option<u32>,
     pub settled: Option<bool>,
     pub more: Option<bool>,
@@ -400,6 +400,6 @@ pub enum Any<'a> {
     F32(f32),
     F64(f64),
     Bytes(&'a [u8]),
-    Symbol(&'a str),
-    Str(&'a str),
+    Symbol(Cow<'a, str>),
+    Str(Cow<'a, str>),
 }
