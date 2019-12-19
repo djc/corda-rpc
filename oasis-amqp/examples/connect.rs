@@ -102,7 +102,7 @@ async fn main() {
     let delivery_tag = Uuid::new_v4();
     let msg_id = format!("{:x?}", &rand::thread_rng().gen::<[u8; 8]>());
     let message_id = format!(
-        "rpc.server.vxdir.{}",
+        "rpc.client.vxdir.{}",
         &msg_id[1..msg_id.len() - 1].replace(", ", "")
     );
 
@@ -126,8 +126,8 @@ async fn main() {
         }),
         message: Some(amqp::Message {
             properties: Some(amqp::Properties {
-                message_id: Some(message_id.into()),
-                reply_to: Some("vx-web"),
+                message_id: Some(message_id.clone().into()),
+                reply_to: Some(message_id.into()),
                 ..Default::default()
             }),
             application_properties: Some(amqp::ApplicationProperties(properties)),

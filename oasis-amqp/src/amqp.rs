@@ -84,7 +84,7 @@ pub struct Properties<'a> {
     pub user_id: Option<&'a Bytes>,
     pub to: Option<&'a str>,
     pub subject: Option<&'a str>,
-    pub reply_to: Option<&'a str>,
+    pub reply_to: Option<Cow<'a, str>>,
     pub correlation_id: Option<&'a str>,
     pub content_type: Option<&'a str>,
     pub content_encoding: Option<&'a str>,
