@@ -4,10 +4,12 @@ use std::time::SystemTime;
 
 use futures::{sink::SinkExt, stream::StreamExt};
 use oasis_amqp::{amqp, sasl, Codec, Frame, Protocol};
-use serde_bytes::Bytes;
+use rand::{self, Rng};
+use serde_bytes::{ByteBuf, Bytes};
 use tokio;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
+use uuid::Uuid;
 
 #[tokio::main]
 async fn main() {
@@ -95,18 +97,21 @@ async fn main() {
     let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let timestamp = i64::try_from(timestamp.as_millis()).unwrap();
 
+    let rpc_id = format!("{:x}", Uuid::new_v4().to_hyphenated());
+    let rpc_session_id = format!("{:x}", Uuid::new_v4().to_hyphenated());
+    let delivery_tag = Uuid::new_v4();
+    let msg_id = format!("{:x?}", &rand::thread_rng().gen::<[u8; 8]>());
+    let message_id = format!(
+        "rpc.server.vxdir.{}",
+        &msg_id[1..msg_id.len() - 1].replace(", ", "")
+    );
+
     let mut properties = HashMap::new();
     properties.insert("tag", amqp::Any::I32(0));
-    properties.insert("method-name", amqp::Any::Str("networkMapSnapshot"));
-    properties.insert(
-        "rpc-id",
-        amqp::Any::Str("c662b784-d9d1-4320-9c39-62bffa3975b6"),
-    );
+    properties.insert("method-name", amqp::Any::Str("networkMapSnapshot".into()));
+    properties.insert("rpc-id", amqp::Any::Str(rpc_id.into()));
     properties.insert("rpc-id-timestamp", amqp::Any::I64(timestamp));
-    properties.insert(
-        "rpc-session-id",
-        amqp::Any::Str("2ac4ccb9-0da0-4ddc-8db7-cee4bb0115a1"),
-    );
+    properties.insert("rpc-session-id", amqp::Any::Str(rpc_session_id.into()));
     properties.insert("rpc-session-id-timestamp", amqp::Any::I64(timestamp));
 
     let transfer = Frame::Amqp(amqp::Frame {
@@ -115,13 +120,13 @@ async fn main() {
         performative: amqp::Performative::Transfer(amqp::Transfer {
             handle: 0,
             delivery_id: Some(0),
-            delivery_tag: Some(Bytes::new(b"foobar!")),
+            delivery_tag: Some(ByteBuf::from(delivery_tag.as_bytes().to_vec())),
             message_format: Some(0),
             ..Default::default()
         }),
         message: Some(amqp::Message {
             properties: Some(amqp::Properties {
-                message_id: Some("rpc.server.vxdir.6543431538375707788"),
+                message_id: Some(message_id.into()),
                 reply_to: Some("vx-web"),
                 ..Default::default()
             }),
