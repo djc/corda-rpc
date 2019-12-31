@@ -8,9 +8,9 @@ use serde;
 use tokio_util::codec::{Decoder, Encoder};
 
 pub mod amqp;
-mod de;
+pub mod de;
 pub mod sasl;
-mod ser;
+pub mod ser;
 
 pub struct Codec;
 
@@ -203,7 +203,7 @@ pub enum SessionState {
     Discarding,
 }
 
-trait Described {
+pub trait Described {
     const NAME: &'static [u8];
     const ID: u64;
 }
