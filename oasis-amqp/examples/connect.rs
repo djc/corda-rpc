@@ -214,7 +214,7 @@ enum SectionId {
     Encoding,
 }
 
-#[amqp_derive(descriptor("corda:envelope:list", 0xc5620000_00000001))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000001))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:envelope:list")]
 struct Envelope<'a> {
@@ -223,12 +223,12 @@ struct Envelope<'a> {
     pub schema: Schema<'a>,
 }
 
-#[amqp_derive(descriptor("corda:schema:list", 0xc5620000_00000002))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000002))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:schema:list")]
 struct Schema<'a>(#[serde(borrow)] Vec<TypeNotation<'a>>);
 
-#[amqp_derive(descriptor("corda:object-descriptor:list", 0xc5620000_00000003))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000003))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:object-descriptor:list")]
 struct Descriptor<'a> {
@@ -236,7 +236,7 @@ struct Descriptor<'a> {
     code: Option<u64>,
 }
 
-#[amqp_derive(descriptor("corda:field:list", 0xc5620000_00000004))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000004))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:field:list")]
 struct Field<'a> {
@@ -258,7 +258,7 @@ enum TypeNotation<'a> {
     RestrictedType(RestrictedType<'a>),
 }
 
-#[amqp_derive(descriptor("corda:composite-type:list", 0xc5620000_00000005))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000005))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:composite-type:list")]
 struct CompositeType<'a> {
@@ -269,7 +269,7 @@ struct CompositeType<'a> {
     fields: Vec<Field<'a>>,
 }
 
-#[amqp_derive(descriptor("corda:restricted-type:list", 0xc5620000_00000006))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000006))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:restricted-type:list")]
 struct RestrictedType<'a> {
@@ -281,7 +281,7 @@ struct RestrictedType<'a> {
     choices: Vec<Choice<'a>>,
 }
 
-#[amqp_derive(descriptor("corda:choice:list", 0xc5620000_00000007))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000007))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:choice:list")]
 struct Choice<'a> {
@@ -289,7 +289,7 @@ struct Choice<'a> {
     value: &'a str,
 }
 
-#[amqp_derive(descriptor("corda:transforms-schema:list", 0xc5620000_00000009))]
+#[amqp_derive(descriptor(code = 0xc5620000_00000009))]
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "corda:transforms-schema:list")]
 struct TransformsSchema {}
