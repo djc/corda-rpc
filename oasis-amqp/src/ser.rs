@@ -238,7 +238,13 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
         Ok(())
     }
 
-    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
+    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq> {
+        // Array format with 4-byte length
+        self.output.push(0xf0);
+        self.offsets.push(self.output.len());
+        self.output.extend_from_slice(&[0, 0, 0, 0]);
+        let len = len.unwrap() as u32;
+        self.output.extend_from_slice(&len.to_be_bytes());
         Ok(self)
     }
 
@@ -321,6 +327,10 @@ impl ser::SerializeSeq for &'_ mut Serializer<'_> {
 
     // Close the sequence.
     fn end(self) -> Result<()> {
+        let offset = self.offsets.pop().unwrap();
+        let len = (self.output.len() - offset - 4) as u32;
+        let dst = &mut self.output[offset..offset + 4];
+        dst.copy_from_slice(&len.to_be_bytes());
         Ok(())
     }
 }
