@@ -13,20 +13,47 @@ pub fn amqp(
     let descriptor = if !attr.is_empty() {
         let list = syn::parse::<syn::MetaList>(attr).unwrap();
         if list.path.is_ident("descriptor") {
-            assert_eq!(list.nested.len(), 2);
-            let name = if let Some(syn::NestedMeta::Lit(syn::Lit::Str(s))) = list.nested.first() {
-                s.value()
-            } else {
-                panic!("could not extract descriptor name from attribute");
-            };
+            if list.nested.len() == 2 {
+                let name = if let Some(syn::NestedMeta::Lit(syn::Lit::Str(s))) = list.nested.first()
+                {
+                    s.value()
+                } else {
+                    panic!("could not extract descriptor name from attribute");
+                };
 
-            let id = if let Some(syn::NestedMeta::Lit(syn::Lit::Int(s))) = list.nested.last() {
-                s.clone()
-            } else {
-                panic!("could not extract descriptor ID from attribute");
-            };
+                let id = if let Some(syn::NestedMeta::Lit(syn::Lit::Int(s))) = list.nested.last() {
+                    s.clone()
+                } else {
+                    panic!("could not extract descriptor ID from attribute");
+                };
 
-            Some((name, id))
+                Some((Some(name), Some(id)))
+            } else {
+                assert_eq!(list.nested.len(), 1);
+                let pair = if let Some(syn::NestedMeta::Meta(syn::Meta::NameValue(pair))) =
+                    list.nested.first()
+                {
+                    pair
+                } else {
+                    panic!("could not extract descriptor name or code");
+                };
+
+                if pair.path.is_ident("name") {
+                    if let syn::Lit::Str(s) = &pair.lit {
+                        Some((Some(s.value()), None))
+                    } else {
+                        panic!("invalid type for descriptor name");
+                    }
+                } else if pair.path.is_ident("code") {
+                    if let syn::Lit::Int(s) = &pair.lit {
+                        Some((None, Some(s.clone())))
+                    } else {
+                        panic!("invalid type for descriptor name");
+                    }
+                } else {
+                    panic!("invalid descriptor element {:?}", pair.path);
+                }
+            }
         } else {
             panic!("invalid attribute {:?}", list.path);
         }
@@ -36,7 +63,7 @@ pub fn amqp(
 
     let tokens = match syn::parse::<syn::Item>(item.clone()).unwrap() {
         syn::Item::Enum(item) => enum_serde(item),
-        syn::Item::Struct(item) => struct_serde(item, descriptor.unwrap()),
+        syn::Item::Struct(item) => struct_serde(item, dbg!(descriptor).unwrap()),
         _ => panic!("amqp attribute can only be applied to enum or struct"),
     };
 
@@ -252,16 +279,23 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
 
 fn struct_serde(
     def: syn::ItemStruct,
-    descriptor: (String, syn::LitInt),
+    descriptor: (Option<String>, Option<syn::LitInt>),
 ) -> proc_macro::TokenStream {
-    let name = def.ident;
+    let ident = def.ident;
     let generics = def.generics;
-    let (descriptor_name, descriptor_id) = descriptor;
-    let descriptor_name = syn::LitByteStr::new(descriptor_name.as_bytes(), Span::call_site());
+    let (name, code) = descriptor;
+
+    let none = quote!(None);
+    let name = name.map_or(none.clone(), |s| {
+        let lit = syn::LitByteStr::new(s.as_bytes(), Span::call_site());
+        quote!(Some(#lit))
+    });
+    let code = code.map_or(none, |i| quote!(Some(#i)));
+
     let res = quote!(
-        impl#generics Described for #name#generics {
-            const NAME: Option<&'static [u8]> = Some(#descriptor_name);
-            const CODE: Option<u64> = Some(#descriptor_id);
+        impl#generics Described for #ident#generics {
+            const NAME: Option<&'static [u8]> = #name;
+            const CODE: Option<u64> = #code;
         }
     );
 
