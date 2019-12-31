@@ -204,8 +204,8 @@ pub enum SessionState {
 }
 
 pub trait Described {
-    const NAME: &'static [u8];
-    const ID: u64;
+    const NAME: Option<&'static [u8]>;
+    const CODE: Option<u64>;
 }
 
 #[derive(Debug, Error)]

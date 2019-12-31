@@ -111,7 +111,7 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
         let mut ty_name = ty.clone();
         let mut segment = ty_name.path.segments.last_mut().unwrap();
         segment.arguments = syn::PathArguments::None;
-        int_arms.append_all(quote!(#ty_name::ID => serde::export::Ok(Field::#variant),));
+        int_arms.append_all(quote!(#ty_name::CODE => serde::export::Ok(Field::#variant),));
         bytes_arms.append_all(quote!(#ty_name::NAME => serde::export::Ok(Field::#variant),));
 
         let variant_name = syn::LitStr::new(&var.ident.to_string(), Span::call_site());
@@ -134,7 +134,7 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
         where
             E: serde::de::Error,
         {
-            match value {
+            match Some(value) {
                 #int_arms
                 _ => serde::export::Err(serde::de::Error::invalid_value(
                     serde::de::Unexpected::Unsigned(value),
@@ -174,7 +174,7 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
                         where
                             E: serde::de::Error,
                         {
-                            match value {
+                            match Some(value) {
                                 #bytes_arms
                                 _ => {
                                     let value = &serde::export::from_utf8_lossy(value);
@@ -260,8 +260,8 @@ fn struct_serde(
     let descriptor_name = syn::LitByteStr::new(descriptor_name.as_bytes(), Span::call_site());
     let res = quote!(
         impl#generics Described for #name#generics {
-            const NAME: &'static [u8] = #descriptor_name;
-            const ID: u64 = #descriptor_id;
+            const NAME: Option<&'static [u8]> = Some(#descriptor_name);
+            const CODE: Option<u64> = Some(#descriptor_id);
         }
     );
 
