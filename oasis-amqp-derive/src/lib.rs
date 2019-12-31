@@ -8,7 +8,7 @@ use syn;
 #[proc_macro_attribute]
 pub fn amqp(
     attr: proc_macro::TokenStream,
-    mut item: proc_macro::TokenStream,
+    item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     let descriptor = if !attr.is_empty() {
         let list = syn::parse::<syn::MetaList>(attr).unwrap();
@@ -61,14 +61,16 @@ pub fn amqp(
         None
     };
 
-    let tokens = match syn::parse::<syn::Item>(item.clone()).unwrap() {
-        syn::Item::Enum(item) => enum_serde(item),
-        syn::Item::Struct(item) => struct_serde(item, dbg!(descriptor).unwrap()),
+    let (impls, attrs) = match syn::parse::<syn::Item>(item.clone()).unwrap() {
+        syn::Item::Enum(item) => (enum_serde(item), None),
+        syn::Item::Struct(item) => struct_serde(item, descriptor.unwrap()),
         _ => panic!("amqp attribute can only be applied to enum or struct"),
     };
 
-    item.extend(tokens);
-    item
+    let mut new = attrs.unwrap_or(proc_macro::TokenStream::new());
+    new.extend(item);
+    new.extend(impls);
+    new
 }
 
 fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
@@ -280,11 +282,17 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
 fn struct_serde(
     def: syn::ItemStruct,
     descriptor: (Option<String>, Option<syn::LitInt>),
-) -> proc_macro::TokenStream {
+) -> (proc_macro::TokenStream, Option<proc_macro::TokenStream>) {
     let ident = def.ident;
     let generics = def.generics;
     let (name, code) = descriptor;
 
+    let renamed = format!(
+        "{}|{}",
+        name.clone().unwrap_or("".into()),
+        code.clone()
+            .map_or("".into(), |i| i.base10_digits().to_string())
+    );
     let none = quote!(None);
     let name = name.map_or(none.clone(), |s| {
         let lit = syn::LitByteStr::new(s.as_bytes(), Span::call_site());
@@ -292,14 +300,15 @@ fn struct_serde(
     });
     let code = code.map_or(none, |i| quote!(Some(#i)));
 
-    let res = quote!(
+    let described = quote!(
         impl#generics Described for #ident#generics {
             const NAME: Option<&'static [u8]> = #name;
             const CODE: Option<u64> = #code;
         }
     );
 
-    res.into()
+    let rename = quote!(#[serde(rename = #renamed)]);
+    (described.into(), Some(rename.into()))
 }
 
 fn translate(s: &str) -> String {

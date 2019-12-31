@@ -14,14 +14,12 @@ pub enum Frame<'a> {
 
 #[amqp(descriptor("amqp:sasl-mechanisms:list", 0x00000000_00000040))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:sasl-mechanisms:list")]
 pub struct Mechanisms {
     sasl_server_mechanisms: Vec<Mechanism>,
 }
 
 #[amqp(descriptor("amqp:sasl-init:list", 0x00000000_00000041))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:sasl-init:list")]
 pub struct Init<'a> {
     pub mechanism: Mechanism,
     #[serde(borrow)]
@@ -39,7 +37,6 @@ pub enum Mechanism {
 
 #[amqp(descriptor("amqp:sasl-outcome:list", 0x00000000_00000044))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:sasl-outcome:list")]
 pub struct Outcome<'a> {
     code: Code,
     #[serde(borrow)]

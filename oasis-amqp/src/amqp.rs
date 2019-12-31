@@ -57,7 +57,6 @@ pub struct Message<'a> {
 
 #[amqp(descriptor("amqp:header:list", 0x00000000_00000070))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:header:list")]
 pub struct Header {
     pub durable: Option<bool>,
     pub priority: Option<u8>,
@@ -68,17 +67,14 @@ pub struct Header {
 
 #[amqp(descriptor("amqp:delivery-annotations:map", 0x00000000_00000071))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:delivery-annotations:map")]
 pub struct DeliveryAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[amqp(descriptor("amqp:message-annotations:map", 0x00000000_00000072))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:message-annotations:map")]
 pub struct MessageAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[amqp(descriptor("amqp:properties:list", 0x00000000_00000073))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:properties:list")]
 pub struct Properties<'a> {
     pub message_id: Option<Cow<'a, str>>,
     pub user_id: Option<&'a Bytes>,
@@ -97,7 +93,6 @@ pub struct Properties<'a> {
 
 #[amqp(descriptor("amqp:application-properties:map", 0x00000000_00000074))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:application-properties:map")]
 pub struct ApplicationProperties<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'a>>);
 
 #[amqp]
@@ -110,22 +105,18 @@ pub enum Body {
 
 #[amqp(descriptor("amqp:data:binary", 0x00000000_00000075))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:data:binary")]
 pub struct Data(pub ByteBuf);
 
 #[amqp(descriptor("amqp:amqp-sequence:list", 0x00000000_00000076))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:amqp-sequence:list")]
 pub struct Sequence {}
 
 #[amqp(descriptor("amqp:value:*", 0x00000000_00000077))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:value:*")]
 pub struct Value {}
 
 #[amqp(descriptor("amqp:footer:map", 0x00000000_00000078))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:footer:map")]
 pub struct Footer<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[amqp]
@@ -143,7 +134,6 @@ pub enum Performative<'a> {
 
 #[amqp(descriptor("amqp:open:list", 0x00000000_00000010))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:open:list")]
 pub struct Open<'a> {
     pub container_id: &'a str,
     pub hostname: Option<&'a str>,
@@ -158,7 +148,6 @@ pub struct Open<'a> {
 
 #[amqp(descriptor("amqp:begin:list", 0x00000000_00000011))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:begin:list")]
 pub struct Begin<'a> {
     pub remote_channel: Option<u16>,
     pub next_outgoing_id: u32,
@@ -173,7 +162,6 @@ pub struct Begin<'a> {
 
 #[amqp(descriptor("amqp:attach:list", 0x00000000_00000012))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:attach:list")]
 pub struct Attach<'a> {
     pub name: String,
     pub handle: u32,
@@ -194,7 +182,6 @@ pub struct Attach<'a> {
 
 #[amqp(descriptor("amqp:flow:list", 0x00000000_00000013))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:flow:list")]
 pub struct Flow<'a> {
     pub next_incoming_id: Option<u32>,
     pub incoming_window: u32,
@@ -212,7 +199,6 @@ pub struct Flow<'a> {
 
 #[amqp(descriptor("amqp:transfer:list", 0x00000000_00000014))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:transfer:list")]
 pub struct Transfer {
     pub handle: u32,
     pub delivery_id: Option<u32>,
@@ -229,7 +215,6 @@ pub struct Transfer {
 
 #[amqp(descriptor("amqp:disposition:list", 0x00000000_00000015))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:disposition:list")]
 pub struct Disposition {
     pub role: Role,
     pub first: u32,
@@ -241,7 +226,6 @@ pub struct Disposition {
 
 #[amqp(descriptor("amqp:detach:list", 0x00000000_00000016))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:detach:list")]
 pub struct Detach<'a> {
     pub handle: u32,
     pub closed: Option<bool>,
@@ -251,7 +235,6 @@ pub struct Detach<'a> {
 
 #[amqp(descriptor("amqp:close:list", 0x00000000_00000018))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:close:list")]
 pub struct Close<'a> {
     #[serde(borrow)]
     pub error: Option<AmqpError<'a>>,
@@ -259,7 +242,6 @@ pub struct Close<'a> {
 
 #[amqp(descriptor("amqp:error:list", 0x00000000_0000001d))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:error:list")]
 pub struct AmqpError<'a> {
     #[serde(borrow)]
     condition: &'a str,
@@ -287,7 +269,6 @@ impl Serialize for Role {
 
 #[amqp(descriptor("amqp:source:list", 0x00000000_00000028))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:source:list")]
 pub struct Source<'a> {
     pub address: Option<&'a str>,
     pub durable: Option<u32>,
@@ -336,42 +317,34 @@ pub enum Outcome {
 
 #[amqp(descriptor("amqp:received:list", 0x00000000_00000023))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:received:list")]
 pub struct Received {}
 
 #[amqp(descriptor("amqp:accepted:list", 0x00000000_00000024))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:accepted:list")]
 pub struct Accepted {}
 
 #[amqp(descriptor("amqp:rejected:list", 0x00000000_00000025))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:rejected:list")]
 pub struct Rejected {}
 
 #[amqp(descriptor("amqp:released:list", 0x00000000_00000026))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:released:list")]
 pub struct Released {}
 
 #[amqp(descriptor("amqp:modified:list", 0x00000000_00000027))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:modified:list")]
 pub struct Modified {}
 
 #[amqp(descriptor("amqp:declared:list", 0x00000000_00000033))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:declared:list")]
 pub struct Declared {}
 
 #[amqp(descriptor("amqp:transactional-state:list", 0x00000000_00000034))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "amqp:transactional-state:list")]
 pub struct TransactionalState {}
 
 #[amqp(descriptor("amqp:target:list", 0x00000000_00000029))]
 #[derive(Debug, Default, Deserialize, Serialize)]
-#[serde(rename = "amqp:target:list")]
 pub struct Target<'a> {
     pub address: Option<String>,
     pub durable: Option<u32>,

@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use serde::{ser, Serialize};
 
 use crate::Error;
@@ -211,14 +213,21 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
     where
         T: ?Sized + Serialize,
     {
-        let bytes = name.as_bytes();
-        assert!(bytes.len() < 256);
-
-        // Descriptor in 1-byte length string format
         self.output.push(0x00);
-        self.output.push(0xa3);
-        self.output.push(bytes.len() as u8);
-        self.output.extend_from_slice(bytes);
+        let sep = name.find('|').unwrap();
+        let (name, code) = name.split_at(sep);
+        if code.len() > 1 {
+            let code = u64::from_str(&code[1..]).unwrap();
+            self.serialize_u64(code)?;
+        } else {
+            let bytes = name.as_bytes();
+            assert!(bytes.len() > 0);
+            assert!(bytes.len() < 256);
+
+            self.output.push(0xa3);
+            self.output.push(bytes.len() as u8);
+            self.output.extend_from_slice(bytes);
+        }
 
         value.serialize(self)?;
         Ok(())
@@ -282,18 +291,26 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
     }
 
     fn serialize_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeStruct> {
-        let bytes = name.as_bytes();
-        assert!(bytes.len() < 256);
-        assert!(len < 256);
-
-        // Descriptor in 1-byte length string format
+        // Described type
         self.output.push(0x00);
-        self.output.push(0xa3);
-        self.output.push(bytes.len() as u8);
-        self.output.extend_from_slice(bytes);
-        self.output.push(0xd0);
+        let sep = name.find('|').unwrap();
+        let (name, code) = name.split_at(sep);
+        if code.len() > 1 {
+            let code = u64::from_str(&code[1..]).unwrap();
+            self.serialize_u64(code)?;
+        } else {
+            let bytes = name.as_bytes();
+            assert!(bytes.len() > 0);
+            assert!(bytes.len() < 256);
+
+            self.output.push(0xa3);
+            self.output.push(bytes.len() as u8);
+            self.output.extend_from_slice(bytes);
+        }
 
         // Variable-width type header in 4-byte length format
+        assert!(len < 256);
+        self.output.push(0xd0);
         self.offsets.push(self.output.len());
         self.output.extend_from_slice(&[0, 0, 0, 0]);
         self.output.extend_from_slice(&(len as u32).to_be_bytes());

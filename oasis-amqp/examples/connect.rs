@@ -216,7 +216,6 @@ enum SectionId {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000001))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:envelope:list")]
 struct Envelope<'a> {
     #[serde(borrow)]
     pub blob: &'a Bytes,
@@ -225,12 +224,10 @@ struct Envelope<'a> {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000002))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:schema:list")]
 struct Schema<'a>(#[serde(borrow)] Vec<TypeNotation<'a>>);
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000003))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:object-descriptor:list")]
 struct Descriptor<'a> {
     name: Option<&'a str>,
     code: Option<u64>,
@@ -238,7 +235,6 @@ struct Descriptor<'a> {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000004))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:field:list")]
 struct Field<'a> {
     name: &'a str,
     #[serde(rename = "type")]
@@ -260,7 +256,6 @@ enum TypeNotation<'a> {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000005))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:composite-type:list")]
 struct CompositeType<'a> {
     name: &'a str,
     label: Option<&'a str>,
@@ -271,7 +266,6 @@ struct CompositeType<'a> {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000006))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:restricted-type:list")]
 struct RestrictedType<'a> {
     name: &'a str,
     label: Option<&'a str>,
@@ -283,7 +277,6 @@ struct RestrictedType<'a> {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000007))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:choice:list")]
 struct Choice<'a> {
     name: &'a str,
     value: &'a str,
@@ -291,7 +284,6 @@ struct Choice<'a> {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000009))]
 #[derive(Debug, Deserialize, Serialize)]
-#[serde(rename = "corda:transforms-schema:list")]
 struct TransformsSchema {}
 
 const CORDA_MAGIC: &[u8; 7] = b"corda\x01\x00";
