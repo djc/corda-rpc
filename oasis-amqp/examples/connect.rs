@@ -65,7 +65,7 @@ async fn main() {
         channel: 0,
         extended_header: None,
         performative: amqp::Performative::Attach(amqp::Attach {
-            name: "vx-web-0",
+            name: "vx-web-sender".into(),
             handle: 0,
             role: amqp::Role::Sender,
             snd_settle_mode: None,
@@ -75,7 +75,7 @@ async fn main() {
                 ..Default::default()
             }),
             target: Some(amqp::Target {
-                address: Some("rpc.server"),
+                address: Some("rpc.server".into()),
                 ..Default::default()
             }),
             unsettled: None,
@@ -128,11 +128,11 @@ async fn main() {
         message: Some(amqp::Message {
             properties: Some(amqp::Properties {
                 message_id: Some(message_id.clone().into()),
-                reply_to: Some(message_id.into()),
+                reply_to: Some("vx-web-sender".into()),
                 ..Default::default()
             }),
             application_properties: Some(amqp::ApplicationProperties(properties)),
-            body: Some(amqp::Body::Data(amqp::Data(Bytes::new(b"")))),
+            body: Some(amqp::Body::Data(amqp::Data(ByteBuf::from(body)))),
             ..Default::default()
         }),
     });

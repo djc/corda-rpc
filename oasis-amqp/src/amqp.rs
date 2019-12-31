@@ -51,7 +51,7 @@ pub struct Message<'a> {
     pub message_annotations: Option<MessageAnnotations<'a>>,
     pub properties: Option<Properties<'a>>,
     pub application_properties: Option<ApplicationProperties<'a>>,
-    pub body: Option<Body<'a>>,
+    pub body: Option<Body>,
     pub footer: Option<Footer<'a>>,
 }
 
@@ -102,9 +102,8 @@ pub struct ApplicationProperties<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'
 
 #[amqp]
 #[derive(Debug, Serialize)]
-pub enum Body<'a> {
-    #[serde(borrow)]
-    Data(Data<'a>),
+pub enum Body {
+    Data(Data),
     Sequence(Sequence),
     Value(Value),
 }
@@ -112,7 +111,7 @@ pub enum Body<'a> {
 #[amqp(descriptor("amqp:data:binary", 0x00000000_00000075))]
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename = "amqp:data:binary")]
-pub struct Data<'a>(#[serde(borrow)] pub &'a Bytes);
+pub struct Data(pub ByteBuf);
 
 #[amqp(descriptor("amqp:amqp-sequence:list", 0x00000000_00000076))]
 #[derive(Debug, Default, Deserialize, Serialize)]
@@ -176,12 +175,12 @@ pub struct Begin<'a> {
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "amqp:attach:list")]
 pub struct Attach<'a> {
-    #[serde(borrow)]
-    pub name: &'a str,
+    pub name: String,
     pub handle: u32,
     pub role: Role,
     pub snd_settle_mode: Option<SenderSettleMode>,
     pub rcv_settle_mode: Option<ReceiverSettleMode>,
+    #[serde(borrow)]
     pub source: Option<Source<'a>>,
     pub target: Option<Target<'a>>,
     pub unsettled: Option<HashMap<&'a Bytes, u32>>,
@@ -374,11 +373,12 @@ pub struct TransactionalState {}
 #[derive(Debug, Default, Deserialize, Serialize)]
 #[serde(rename = "amqp:target:list")]
 pub struct Target<'a> {
-    pub address: Option<&'a str>,
+    pub address: Option<String>,
     pub durable: Option<u32>,
     pub expiry_policy: Option<ExpiryPolicy>,
     pub timeout: Option<u32>,
     pub dynamic: Option<bool>,
+    #[serde(borrow)]
     pub dynamic_node_properties: Option<Vec<(&'a str, &'a str)>>,
     pub capabilities: Option<Vec<&'a str>>,
 }
