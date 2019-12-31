@@ -122,30 +122,24 @@ async fn main() {
     body.push(SectionId::DataAndStop as u8);
     let envelope = Envelope {
         blob: Bytes::new(AMQP_EMPTY_LIST),
-        schema: Schema(vec![
-            TypeNotation::CompositeType(CompositeType {
-                name: "Route",
+        schema: Schema(vec![TypeNotation::CompositeType(CompositeType {
+            name: "Route",
+            label: None,
+            provides: vec!["foo"],
+            descriptor: Descriptor {
+                name: None,
+                code: None,
+            },
+            fields: vec![Field {
+                name: "address",
+                ty: "ulong",
+                requires: vec!["foo"],
+                default: None,
                 label: None,
-                provides: vec!["foo"],
-                descriptor: Descriptor {
-                    name: None,
-                    code: None,
-                },
-                fields: vec![
-                    Field {
-                        name: "address",
-                        ty: "ulong",
-                        requires: vec![
-                            "foo"
-                        ],
-                        default: None,
-                        label: None,
-                        mandatory: false,
-                        multiple: false,
-                    }
-                ],
-            })
-        ]),
+                mandatory: false,
+                multiple: false,
+            }],
+        })]),
     };
     ser::into_bytes(&envelope, &mut body).unwrap();
     println!("body: {:?}", body);
