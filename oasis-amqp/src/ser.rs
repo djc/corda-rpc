@@ -257,8 +257,13 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
         Ok(self)
     }
 
-    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple> {
-        unimplemented!()
+    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple> {
+        // Variable-width type header in 4-byte length format
+        self.output.push(0xd0);
+        self.offsets.push(self.output.len());
+        self.output.extend_from_slice(&[0, 0, 0, 0]);
+        self.output.extend_from_slice(&(len as u32).to_be_bytes());
+        Ok(self)
     }
 
     // Tuple structs look just like sequences in JSON.
@@ -308,13 +313,7 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
             self.output.extend_from_slice(bytes);
         }
 
-        // Variable-width type header in 4-byte length format
-        assert!(len < 256);
-        self.output.push(0xd0);
-        self.offsets.push(self.output.len());
-        self.output.extend_from_slice(&[0, 0, 0, 0]);
-        self.output.extend_from_slice(&(len as u32).to_be_bytes());
-        Ok(self)
+        self.serialize_tuple(len)
     }
 
     fn serialize_struct_variant(
@@ -356,14 +355,18 @@ impl ser::SerializeTuple for &'_ mut Serializer<'_> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_element<T>(&mut self, _value: &T) -> Result<()>
+    fn serialize_element<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        unimplemented!()
+        value.serialize(&mut **self)
     }
 
     fn end(self) -> Result<()> {
+        let offset = self.offsets.pop().unwrap();
+        let len = (self.output.len() - offset - 4) as u32;
+        let dst = &mut self.output[offset..offset + 4];
+        dst.copy_from_slice(&len.to_be_bytes());
         Ok(())
     }
 }
