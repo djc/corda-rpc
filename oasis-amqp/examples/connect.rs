@@ -109,6 +109,8 @@ async fn main() {
     );
 
     let mut properties = HashMap::new();
+    properties.insert("JMSReplyTo", amqp::Any::Str(msg_id.into()));
+    properties.insert("_AMQ_VALIDATED_USER", amqp::Any::Str("vxdir".into()));
     properties.insert("tag", amqp::Any::I32(0));
     properties.insert("method-name", amqp::Any::Str("networkMapSnapshot".into()));
     properties.insert("rpc-id", amqp::Any::Str(rpc_id.into()));
@@ -158,6 +160,7 @@ async fn main() {
             properties: Some(amqp::Properties {
                 message_id: Some(message_id.clone().into()),
                 reply_to: Some("vx-web-sender".into()),
+                user_id: Some(Bytes::new(b"vxdir")),
                 ..Default::default()
             }),
             application_properties: Some(amqp::ApplicationProperties(properties)),
