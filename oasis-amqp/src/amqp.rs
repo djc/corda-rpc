@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryInto;
+use std::fmt;
 
 use oasis_amqp_derive::amqp;
-use serde::{self, Deserialize, Serialize};
+use serde::{self, ser::SerializeTuple, Deserialize, Serialize};
 use serde_bytes::{ByteBuf, Bytes};
 
 use crate::{de, Described};
@@ -376,6 +377,67 @@ pub enum SenderSettleMode {
 pub enum ReceiverSettleMode {
     First,
     Second,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename = "amqp:symbol")]
+pub struct Symbol<'a>(&'a str);
+
+impl<'a> From<&'a str> for Symbol<'a> {
+    fn from(s: &'a str) -> Self {
+        Symbol(s)
+    }
+}
+
+impl<'de: 'a, 'a> serde::de::Deserialize<'de> for Symbol<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_str(SymbolVisitor)
+    }
+}
+
+struct SymbolVisitor;
+
+impl<'de> serde::de::Visitor<'de> for SymbolVisitor {
+    type Value = Symbol<'de>;
+
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str("a symbol")
+    }
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(transparent)]
+pub struct List<T>(pub Vec<T>);
+
+impl<T> Default for List<T> {
+    fn default() -> Self {
+        List(Vec::new())
+    }
+}
+
+impl<T> From<Vec<T>> for List<T> {
+    fn from(v: Vec<T>) -> Self {
+        List(v)
+    }
+}
+
+impl<T> Serialize for List<T>
+where
+    T: Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut s = serializer.serialize_tuple(self.0.len())?;
+        for elem in self.0.iter() {
+            s.serialize_element(elem)?;
+        }
+        s.end()
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]

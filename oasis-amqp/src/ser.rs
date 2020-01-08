@@ -16,6 +16,7 @@ where
     let mut serializer = Serializer {
         output,
         offsets: vec![],
+        str_as_symbol: false,
     };
     value.serialize(&mut serializer)?;
     Ok(())
@@ -24,6 +25,7 @@ where
 pub struct Serializer<'a> {
     output: &'a mut Vec<u8>,
     offsets: Vec<usize>,
+    str_as_symbol: bool,
 }
 
 impl ser::Serializer for &'_ mut Serializer<'_> {
@@ -137,17 +139,21 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
 
     fn serialize_str(self, v: &str) -> Result<()> {
         if v.len() < 256 {
-            self.output.push(0xa1);
+            self.output
+                .push(if self.str_as_symbol { 0xa3 } else { 0xa1 });
             self.output.push(v.len() as u8);
             self.output.extend_from_slice(v.as_bytes());
         } else if v.len() < std::u32::MAX as usize {
-            self.output.push(0xa1);
+            self.output
+                .push(if self.str_as_symbol { 0xb3 } else { 0xb1 });
             self.output
                 .extend_from_slice(&(v.len() as u32).to_be_bytes()[..]);
             self.output.extend_from_slice(v.as_bytes());
         } else {
             return Err(Error::InvalidData);
         }
+
+        self.str_as_symbol = false;
         Ok(())
     }
 
@@ -213,6 +219,11 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
     where
         T: ?Sized + Serialize,
     {
+        if name == "amqp:symbol" {
+            self.str_as_symbol = true;
+            return value.serialize(self);
+        }
+
         self.output.push(0x00);
         let sep = name.find('|').unwrap();
         let (name, code) = name.split_at(sep);
@@ -229,8 +240,7 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
             self.output.extend_from_slice(bytes);
         }
 
-        value.serialize(self)?;
-        Ok(())
+        value.serialize(self)
     }
 
     fn serialize_newtype_variant<T>(
