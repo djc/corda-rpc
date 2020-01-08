@@ -123,25 +123,21 @@ async fn main() {
     body.extend_from_slice(CORDA_MAGIC);
     body.push(SectionId::DataAndStop as u8);
     let envelope = Envelope {
-        blob: Bytes::new(AMQP_EMPTY_LIST),
-        schema: Schema(vec![TypeNotation::CompositeType(CompositeType {
-            name: "Route",
-            label: None,
-            provides: vec!["foo"],
-            descriptor: Descriptor {
-                name: None,
-                code: None,
-            },
-            fields: vec![Field {
-                name: "address",
-                ty: "ulong",
-                requires: vec!["foo"],
-                default: None,
+        obj: ObjectList(amqp::List::default()),
+        schema: Schema {
+            types: vec![TypeNotation::RestrictedType(RestrictedType {
+                name: "java.util.List<java.lang.Object>",
                 label: None,
-                mandatory: false,
-                multiple: false,
-            }],
-        })]),
+                provides: amqp::List::default(),
+                source: "list",
+                descriptor: Descriptor {
+                    name: Some("net.corda:1BLPJgNvsxdvPcbrIQd87g==".into()),
+                    code: None,
+                },
+                choices: amqp::List::default(),
+            })]
+            .into(),
+        },
     };
     ser::into_bytes(&envelope, &mut body).unwrap();
     println!("body: {:?}", body);
@@ -219,20 +215,24 @@ enum SectionId {
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000001))]
 #[derive(Debug, Deserialize, Serialize)]
-struct Envelope<'a> {
+struct Envelope<'a, T> {
+    pub obj: T,
     #[serde(borrow)]
-    pub blob: &'a Bytes,
     pub schema: Schema<'a>,
 }
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000002))]
 #[derive(Debug, Deserialize, Serialize)]
-struct Schema<'a>(#[serde(borrow)] Vec<TypeNotation<'a>>);
+struct Schema<'a> {
+    #[serde(borrow)]
+    types: amqp::List<TypeNotation<'a>>,
+}
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000003))]
 #[derive(Debug, Deserialize, Serialize)]
 struct Descriptor<'a> {
-    name: Option<&'a str>,
+    #[serde(borrow)]
+    name: Option<amqp::Symbol<'a>>,
     code: Option<u64>,
 }
 
@@ -243,12 +243,16 @@ struct Field<'a> {
     #[serde(rename = "type")]
     ty: &'a str,
     #[serde(borrow)]
-    requires: Vec<&'a str>,
+    requires: amqp::List<&'a str>,
     default: Option<&'a str>,
     label: Option<&'a str>,
     mandatory: bool,
     multiple: bool,
 }
+
+#[amqp_derive(descriptor(name = "net.corda:1BLPJgNvsxdvPcbrIQd87g=="))]
+#[derive(Debug, Deserialize, Serialize)]
+struct ObjectList(amqp::List<()>);
 
 #[amqp_derive]
 #[derive(Debug, Serialize)]
@@ -262,9 +266,9 @@ enum TypeNotation<'a> {
 struct CompositeType<'a> {
     name: &'a str,
     label: Option<&'a str>,
-    provides: Vec<&'a str>,
+    provides: amqp::List<&'a str>,
     descriptor: Descriptor<'a>,
-    fields: Vec<Field<'a>>,
+    fields: amqp::List<Field<'a>>,
 }
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000006))]
@@ -272,10 +276,10 @@ struct CompositeType<'a> {
 struct RestrictedType<'a> {
     name: &'a str,
     label: Option<&'a str>,
-    provides: Vec<&'a str>,
+    provides: amqp::List<&'a str>,
     source: &'a str,
     descriptor: Descriptor<'a>,
-    choices: Vec<Choice<'a>>,
+    choices: amqp::List<Choice<'a>>,
 }
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000007))]
@@ -290,4 +294,3 @@ struct Choice<'a> {
 struct TransformsSchema {}
 
 const CORDA_MAGIC: &[u8; 7] = b"corda\x01\x00";
-const AMQP_EMPTY_LIST: &[u8] = &[45];
