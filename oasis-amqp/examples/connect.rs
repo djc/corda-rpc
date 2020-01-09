@@ -73,7 +73,7 @@ async fn main() {
             snd_settle_mode: None,
             rcv_settle_mode: None,
             source: Some(amqp::Source {
-                address: Some("vx-web"),
+                address: Some("vx-web".into()),
                 ..Default::default()
             }),
             target: Some(amqp::Target {

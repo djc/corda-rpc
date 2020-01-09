@@ -271,11 +271,12 @@ impl Serialize for Role {
 #[amqp(descriptor("amqp:source:list", 0x00000000_00000028))]
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Source<'a> {
-    pub address: Option<&'a str>,
+    pub address: Option<String>,
     pub durable: Option<TerminusDurability>,
     pub expiry_policy: Option<ExpiryPolicy>,
     pub timeout: Option<u32>,
     pub dynamic: Option<bool>,
+    #[serde(borrow)]
     pub dynamic_node_properties: Option<Vec<(&'a str, &'a str)>>,
     pub distribution_mode: Option<DistributionMode>,
     pub filter: Option<Vec<(&'a str, &'a str)>>,
