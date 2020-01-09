@@ -457,6 +457,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 let id = self.next()?;
                 visitor.visit_u64(id as u64)
             }
+            0x43 | 0x52 | 0x70 => visitor.visit_u64(self.read_u32()? as u64),
             0x44 | 0x53 | 0x80 => self.deserialize_u64(visitor),
             0xa3 | 0xb3 => self.deserialize_bytes(visitor),
             _ => Err(Error::InvalidData),
