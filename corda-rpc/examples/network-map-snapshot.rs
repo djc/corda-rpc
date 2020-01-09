@@ -45,6 +45,11 @@ async fn main() {
         .await
         .unwrap();
 
+    let rcv_queue_name = format!(
+        "rpc.client.vxdir.{}",
+        rand::thread_rng().gen::<u64>() & 0xefffffff_ffffffff,
+    );
+
     let now = SystemTime::now();
     let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let timestamp = i64::try_from(timestamp.as_millis()).unwrap();
@@ -52,18 +57,13 @@ async fn main() {
     let rpc_id = format!("{:x}", Uuid::new_v4().to_hyphenated());
     let rpc_session_id = format!("{:x}", Uuid::new_v4().to_hyphenated());
     let delivery_tag = Uuid::new_v4();
-    let msg_id = format!("{:x?}", &rand::thread_rng().gen::<[u8; 8]>());
-    let message_id = format!(
-        "rpc.client.vxdir.{}",
-        &msg_id[1..msg_id.len() - 1].replace(", ", "")
-    );
 
     let mut properties = HashMap::new();
-    properties.insert("JMSReplyTo", amqp::Any::Str(msg_id.into()));
+    properties.insert("JMSReplyTo", amqp::Any::Str(rcv_queue_name.clone().into()));
     properties.insert("_AMQ_VALIDATED_USER", amqp::Any::Str("vxdir".into()));
     properties.insert("tag", amqp::Any::I32(0));
     properties.insert("method-name", amqp::Any::Str("networkMapSnapshot".into()));
-    properties.insert("rpc-id", amqp::Any::Str(rpc_id.into()));
+    properties.insert("rpc-id", amqp::Any::Str(rpc_id.clone().into()));
     properties.insert("rpc-id-timestamp", amqp::Any::I64(timestamp));
     properties.insert("rpc-session-id", amqp::Any::Str(rpc_session_id.into()));
     properties.insert("rpc-session-id-timestamp", amqp::Any::I64(timestamp));
@@ -103,8 +103,8 @@ async fn main() {
             },
             amqp::Message {
                 properties: Some(amqp::Properties {
-                    message_id: Some(message_id.clone().into()),
-                    reply_to: Some("vx-web-sender".into()),
+                    message_id: Some(rpc_id.clone().into()),
+                    reply_to: Some(rcv_queue_name.clone().into()),
                     user_id: Some(Bytes::new(b"vxdir")),
                     ..Default::default()
                 }),
@@ -121,17 +121,17 @@ async fn main() {
         channel: 0,
         extended_header: None,
         performative: amqp::Performative::Attach(amqp::Attach {
-            name: message_id.clone(),
+            name: rcv_queue_name.clone(),
             handle: 1,
             role: amqp::Role::Receiver,
             snd_settle_mode: None,
             rcv_settle_mode: None,
             source: Some(amqp::Source {
-                address: Some("vx-web"),
+                address: Some(rcv_queue_name.clone()),
                 ..Default::default()
             }),
             target: Some(amqp::Target {
-                address: Some("rpc.client".into()),
+                address: Some("vx-web".into()),
                 ..Default::default()
             }),
             unsettled: None,
