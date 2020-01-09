@@ -231,19 +231,19 @@ pub struct Detach<'a> {
     pub handle: u32,
     pub closed: Option<bool>,
     #[serde(borrow)]
-    pub error: Option<AmqpError<'a>>,
+    pub error: Option<Error<'a>>,
 }
 
 #[amqp(descriptor("amqp:close:list", 0x00000000_00000018))]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Close<'a> {
     #[serde(borrow)]
-    pub error: Option<AmqpError<'a>>,
+    pub error: Option<Error<'a>>,
 }
 
 #[amqp(descriptor("amqp:error:list", 0x00000000_0000001d))]
 #[derive(Debug, Deserialize, Serialize)]
-pub struct AmqpError<'a> {
+pub struct Error<'a> {
     #[serde(borrow)]
     condition: &'a str,
     description: &'a str,
