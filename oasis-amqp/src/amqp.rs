@@ -272,7 +272,7 @@ impl Serialize for Role {
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct Source<'a> {
     pub address: Option<&'a str>,
-    pub durable: Option<u32>,
+    pub durable: Option<TerminusDurability>,
     pub expiry_policy: Option<ExpiryPolicy>,
     pub timeout: Option<u32>,
     pub dynamic: Option<bool>,
@@ -282,6 +282,32 @@ pub struct Source<'a> {
     pub default_outcome: Option<Outcome>,
     pub outcomes: Option<Vec<&'a str>>,
     pub capabilities: Option<Vec<&'a str>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub enum TerminusDurability {
+    None,
+    Configuration,
+    UnsettledState,
+}
+
+impl Default for TerminusDurability {
+    fn default() -> Self {
+        TerminusDurability::None
+    }
+}
+
+impl Serialize for TerminusDurability {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_u32(match self {
+            TerminusDurability::None => 0,
+            TerminusDurability::Configuration => 1,
+            TerminusDurability::UnsettledState => 2,
+        })
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
