@@ -27,7 +27,6 @@ impl Decoder for Codec {
             src.split_to(8).freeze()
         } else {
             let len = u32::from_be_bytes((&src[..4]).try_into().unwrap()) as usize;
-            println!("received {} bytes: {:?}", len, &src[..len]);
             if src.len() >= len {
                 src.split_to(len).freeze().split_off(4)
             } else {
@@ -46,7 +45,6 @@ impl Encoder for Codec {
 
     fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
         let buf = item.to_vec().unwrap();
-        println!("writing {} bytes: {:?}", buf.len(), buf);
         dst.put(&*buf);
         Ok(())
     }
@@ -82,7 +80,7 @@ impl<'a> Frame<'a> {
             return Err(Error::InvalidData);
         }
 
-        match buf[1] {
+        let result = match buf[1] {
             0x00 => Ok(Frame::Amqp(amqp::Frame::decode(doff, &buf[2..])?)),
             0x01 => {
                 assert_eq!(&buf[2..4], &[0, 0]);
@@ -93,7 +91,12 @@ impl<'a> Frame<'a> {
                 Ok(Frame::Sasl(sasl))
             }
             _ => Err(Error::InvalidData),
+        };
+
+        if result.is_err() {
+            println!("failed to decode: {:?}", buf);
         }
+        result
     }
 
     pub fn to_vec(&self) -> Result<Vec<u8>, Error> {
