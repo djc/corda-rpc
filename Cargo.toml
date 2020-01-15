@@ -1,2 +1,2 @@
 [workspace]
-members = ["oasis-amqp", "oasis-amqp-derive"]
+members = ["corda-rpc", "oasis-amqp", "oasis-amqp-derive"]

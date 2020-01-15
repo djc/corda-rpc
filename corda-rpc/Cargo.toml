@@ -1,0 +1,16 @@
+[package]
+name = "corda-rpc"
+version = "0.1.0"
+authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
+edition = "2018"
+
+[dependencies]
+futures = "0.3"
+oasis-amqp = { path = "../oasis-amqp" }
+oasis-amqp-derive = { path = "../oasis-amqp-derive" }
+rand = "0.7"
+serde = { version = "1", features = ["derive"] }
+serde_bytes = { version = "0.11" }
+tokio = { version = "0.2", features = ["dns", "macros", "rt-threaded", "tcp"] }
+tokio-util = { version = "0.2", features = ["codec"] }
+uuid = { version = "0.8", features = ["v4"] }
