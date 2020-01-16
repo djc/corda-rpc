@@ -3,15 +3,17 @@ use std::convert::TryFrom;
 use std::time::SystemTime;
 
 use futures::{sink::SinkExt, stream::StreamExt};
-use oasis_amqp::{amqp, sasl, ser, Codec, Described, Frame, Protocol};
-use oasis_amqp_derive::amqp as amqp_derive;
+use oasis_amqp::{amqp, sasl, ser, Codec, Frame, Protocol};
 use rand::{self, Rng};
-use serde::{Deserialize, Serialize};
 use serde_bytes::{ByteBuf, Bytes};
 use tokio;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 use uuid::Uuid;
+
+use corda_rpc::{
+    Descriptor, Envelope, ObjectList, RestrictedType, Schema, SectionId, TypeNotation, CORDA_MAGIC,
+};
 
 #[tokio::main]
 async fn main() {
@@ -205,92 +207,3 @@ async fn main() {
     let next = transport.next().await;
     println!("read: {:#?}\n", next);
 }
-
-#[derive(Debug, Deserialize, Serialize)]
-enum SectionId {
-    DataAndStop,
-    AltDataAndStop,
-    Encoding,
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000001))]
-#[derive(Debug, Deserialize, Serialize)]
-struct Envelope<'a, T> {
-    pub obj: T,
-    #[serde(borrow)]
-    pub schema: Schema<'a>,
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000002))]
-#[derive(Debug, Deserialize, Serialize)]
-struct Schema<'a> {
-    #[serde(borrow)]
-    types: amqp::List<TypeNotation<'a>>,
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000003))]
-#[derive(Debug, Deserialize, Serialize)]
-struct Descriptor<'a> {
-    #[serde(borrow)]
-    name: Option<amqp::Symbol<'a>>,
-    code: Option<u64>,
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000004))]
-#[derive(Debug, Deserialize, Serialize)]
-struct Field<'a> {
-    name: &'a str,
-    #[serde(rename = "type")]
-    ty: &'a str,
-    #[serde(borrow)]
-    requires: amqp::List<&'a str>,
-    default: Option<&'a str>,
-    label: Option<&'a str>,
-    mandatory: bool,
-    multiple: bool,
-}
-
-#[amqp_derive(descriptor(name = "net.corda:1BLPJgNvsxdvPcbrIQd87g=="))]
-#[derive(Debug, Deserialize, Serialize)]
-struct ObjectList(amqp::List<()>);
-
-#[amqp_derive]
-#[derive(Debug, Serialize)]
-enum TypeNotation<'a> {
-    CompositeType(CompositeType<'a>),
-    RestrictedType(RestrictedType<'a>),
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000005))]
-#[derive(Debug, Deserialize, Serialize)]
-struct CompositeType<'a> {
-    name: &'a str,
-    label: Option<&'a str>,
-    provides: amqp::List<&'a str>,
-    descriptor: Descriptor<'a>,
-    fields: amqp::List<Field<'a>>,
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000006))]
-#[derive(Debug, Deserialize, Serialize)]
-struct RestrictedType<'a> {
-    name: &'a str,
-    label: Option<&'a str>,
-    provides: amqp::List<&'a str>,
-    source: &'a str,
-    descriptor: Descriptor<'a>,
-    choices: amqp::List<Choice<'a>>,
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000007))]
-#[derive(Debug, Deserialize, Serialize)]
-struct Choice<'a> {
-    name: &'a str,
-    value: &'a str,
-}
-
-#[amqp_derive(descriptor(code = 0xc5620000_00000009))]
-#[derive(Debug, Deserialize, Serialize)]
-struct TransformsSchema {}
-
-const CORDA_MAGIC: &[u8; 7] = b"corda\x01\x00";
