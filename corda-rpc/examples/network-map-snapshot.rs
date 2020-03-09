@@ -21,7 +21,10 @@ async fn main() {
     println!("local addr {:?}", stream.local_addr());
     let mut transport = Framed::new(stream, Codec);
 
-    transport.send(&Frame::Header(Protocol::Sasl)).await.unwrap();
+    transport
+        .send(&Frame::Header(Protocol::Sasl))
+        .await
+        .unwrap();
     let _header = transport.next().await.unwrap().unwrap();
     let _mechanisms = transport.next().await.unwrap().unwrap();
 
@@ -45,7 +48,10 @@ async fn main() {
         message: None,
     });
 
-    transport.send(&Frame::Header(Protocol::Amqp)).await.unwrap();
+    transport
+        .send(&Frame::Header(Protocol::Amqp))
+        .await
+        .unwrap();
     transport.send(&open).await.unwrap();
     let _opened = transport.next().await.unwrap().unwrap();
 
