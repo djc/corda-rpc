@@ -67,7 +67,7 @@ pub fn amqp(
         _ => panic!("amqp attribute can only be applied to enum or struct"),
     };
 
-    let mut new = attrs.unwrap_or(proc_macro::TokenStream::new());
+    let mut new = attrs.unwrap_or_else(proc_macro::TokenStream::new);
     new.extend(item);
     new.extend(impls);
     new
@@ -289,7 +289,7 @@ fn struct_serde(
 
     let renamed = format!(
         "{}|{}",
-        name.clone().unwrap_or("".into()),
+        name.clone().unwrap_or_else(|| "".into()),
         code.clone()
             .map_or("".into(), |i| i.base10_digits().to_string())
     );

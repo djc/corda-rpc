@@ -62,6 +62,7 @@ impl std::fmt::Debug for BytesFrame {
     }
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug)]
 pub enum Frame<'a> {
     Amqp(amqp::Frame<'a>),
@@ -161,7 +162,7 @@ impl Protocol {
         }
     }
 
-    fn header(&self) -> &'static [u8] {
+    fn header(self) -> &'static [u8] {
         match self {
             Protocol::Sasl => SASL_PROTO_HEADER,
             Protocol::Amqp => AMQP_PROTO_HEADER,

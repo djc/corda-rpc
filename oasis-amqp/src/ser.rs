@@ -232,7 +232,7 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
             self.serialize_u64(code)?;
         } else {
             let bytes = name.as_bytes();
-            assert!(bytes.len() > 0);
+            assert!(!bytes.is_empty());
             assert!(bytes.len() < 256);
 
             self.output.push(0xa3);
@@ -315,7 +315,7 @@ impl ser::Serializer for &'_ mut Serializer<'_> {
             self.serialize_u64(code)?;
         } else {
             let bytes = name.as_bytes();
-            assert!(bytes.len() > 0);
+            assert!(!bytes.is_empty());
             assert!(bytes.len() < 256);
 
             self.output.push(0xa3);

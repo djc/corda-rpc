@@ -25,7 +25,7 @@ impl<'de> Deserializer<'de> {
     }
 
     fn peek(&self) -> Result<u8> {
-        self.input.get(0).map(|b| *b).ok_or(Error::UnexpectedEnd)
+        self.input.get(0).copied().ok_or(Error::UnexpectedEnd)
     }
 
     fn next(&mut self) -> Result<u8> {
@@ -448,10 +448,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         V: Visitor<'de>,
     {
         match self.peek_constructor()? {
-            0x56 | 0x41 | 0x42 => match self.parse_bool()? {
-                true => visitor.visit_u64(1),
-                false => visitor.visit_u64(0),
-            },
+            0x56 | 0x41 | 0x42 => visitor.visit_u64(if self.parse_bool()? { 1 } else { 0 }),
             0x50 => {
                 self.assume(0x50)?;
                 let id = self.next()?;

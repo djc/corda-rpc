@@ -120,6 +120,7 @@ pub struct Value {}
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Footer<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
+#[allow(clippy::large_enum_variant)]
 #[amqp]
 #[derive(Debug, Serialize)]
 pub enum Performative<'a> {
