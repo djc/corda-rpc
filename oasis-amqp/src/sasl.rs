@@ -1,4 +1,4 @@
-use oasis_amqp_derive::amqp;
+use oasis_amqp_macros::amqp;
 use serde::{self, Deserialize, Serialize};
 use serde_bytes::Bytes;
 

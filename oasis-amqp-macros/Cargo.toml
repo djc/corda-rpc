@@ -1,5 +1,5 @@
 [package]
-name = "oasis-amqp-derive"
+name = "oasis-amqp-macros"
 version = "0.1.0"
 authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
 edition = "2018"

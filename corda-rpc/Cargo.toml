@@ -13,7 +13,7 @@ readme = "../README.md"
 [dependencies]
 futures = "0.3"
 oasis-amqp = { version = "0.1", path = "../oasis-amqp" }
-oasis-amqp-derive = { version = "0.1", path = "../oasis-amqp-derive" }
+oasis-amqp-macros = { version = "0.1", path = "../oasis-amqp-macros" }
 rand = "0.7"
 serde = { version = "1", features = ["derive"] }
 serde_bytes = { version = "0.11" }

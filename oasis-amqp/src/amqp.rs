@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::convert::TryInto;
 use std::fmt;
 
-use oasis_amqp_derive::amqp;
+use oasis_amqp_macros::amqp;
 use serde::{self, ser::SerializeTuple, Deserialize, Serialize};
 use serde_bytes::{ByteBuf, Bytes};
 

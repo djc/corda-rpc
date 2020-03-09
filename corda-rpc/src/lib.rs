@@ -1,5 +1,5 @@
 use oasis_amqp::{amqp, Described};
-use oasis_amqp_derive::amqp as amqp_derive;
+use oasis_amqp_macros::amqp as amqp_derive;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]
