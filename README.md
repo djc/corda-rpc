@@ -11,3 +11,9 @@ repository contains three crates:
 * corda-rpc: Corda-specific code to interact with the RPC mechanism
 * oasis-amqp: a generic library that implements (most of) the AMQP 1.0 protocol
 * oasis-amqp-macros: some procedural macros to support the oasis-amqp code
+
+Current state of the project: unfortunately this is not fully functional yet. The example
+program in `corda-rpc/examples` will run and trigger the RPC on the Corda node, but I
+have not yet been able to receive and process the call's result. This code is provided
+as-is -- I am happy to answer questions and review pull requests. My current project at
+work still needs this, but working on this is currently not a high priority.
