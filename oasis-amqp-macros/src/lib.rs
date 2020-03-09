@@ -51,11 +51,11 @@ pub fn amqp(
                         panic!("invalid type for descriptor name");
                     }
                 } else {
-                    panic!("invalid descriptor element {:?}", pair.path);
+                    panic!("invalid descriptor element {:?}", pair.path.get_ident().unwrap());
                 }
             }
         } else {
-            panic!("invalid attribute {:?}", list.path);
+            panic!("invalid attribute {:?}", list.path.get_ident().unwrap());
         }
     } else {
         None
