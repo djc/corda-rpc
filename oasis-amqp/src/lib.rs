@@ -39,11 +39,10 @@ impl Decoder for Codec {
     }
 }
 
-impl Encoder for Codec {
-    type Item = Frame<'static>;
+impl Encoder<&Frame<'_>> for Codec {
     type Error = Error;
 
-    fn encode(&mut self, item: Self::Item, dst: &mut BytesMut) -> Result<(), Self::Error> {
+    fn encode(&mut self, item: &Frame<'_>, dst: &mut BytesMut) -> Result<(), Self::Error> {
         let buf = item.to_vec().unwrap();
         dst.put(&*buf);
         Ok(())

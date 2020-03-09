@@ -21,7 +21,7 @@ async fn main() {
     println!("local addr {:?}", stream.local_addr());
     let mut transport = Framed::new(stream, Codec);
 
-    transport.send(Frame::Header(Protocol::Sasl)).await.unwrap();
+    transport.send(&Frame::Header(Protocol::Sasl)).await.unwrap();
     let _header = transport.next().await.unwrap().unwrap();
     let _mechanisms = transport.next().await.unwrap().unwrap();
 
@@ -31,7 +31,7 @@ async fn main() {
         hostname: None,
     }));
 
-    transport.send(init).await.unwrap();
+    transport.send(&init).await.unwrap();
     let _outcome = transport.next().await.unwrap().unwrap();
     let _header = transport.next().await.unwrap().unwrap();
 
@@ -45,8 +45,8 @@ async fn main() {
         message: None,
     });
 
-    transport.send(Frame::Header(Protocol::Amqp)).await.unwrap();
-    transport.send(open).await.unwrap();
+    transport.send(&Frame::Header(Protocol::Amqp)).await.unwrap();
+    transport.send(&open).await.unwrap();
     let _opened = transport.next().await.unwrap().unwrap();
 
     let begin = Frame::Amqp(amqp::Frame {
@@ -62,7 +62,7 @@ async fn main() {
         message: None,
     });
 
-    transport.send(begin).await.unwrap();
+    transport.send(&begin).await.unwrap();
     let _begun = transport.next().await.unwrap().unwrap();
 
     let attach = Frame::Amqp(amqp::Frame {
@@ -93,7 +93,7 @@ async fn main() {
         message: None,
     });
 
-    transport.send(attach).await.unwrap();
+    transport.send(&attach).await.unwrap();
     let _attached = transport.next().await.unwrap().unwrap();
     let _flow = transport.next().await.unwrap().unwrap();
 
@@ -168,7 +168,7 @@ async fn main() {
     });
 
     println!("send transfer: {:#?}", transfer);
-    transport.send(transfer).await.unwrap();
+    transport.send(&transfer).await.unwrap();
     let transferred = transport.next().await.unwrap().unwrap();
     println!("read: {:#?}\n", transferred);
 
