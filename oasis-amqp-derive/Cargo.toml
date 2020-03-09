@@ -3,7 +3,12 @@ name = "oasis-amqp-derive"
 version = "0.1.0"
 authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
 edition = "2018"
-publish = false
+description = "Helper macros for AMQP 1.0 type definitions"
+documentation = "https://docs.rs/oasis-amqp-derive"
+repository = "https://github.com/djc/corda-rpc"
+license = "Apache-2.0"
+workspace = ".."
+readme = "../README.md"
 
 [lib]
 proc-macro = true

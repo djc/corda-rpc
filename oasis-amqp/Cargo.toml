@@ -3,7 +3,12 @@ name = "oasis-amqp"
 version = "0.1.0"
 authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
 edition = "2018"
-publish = false
+description = "Asynchronous AMQP 1.0 protocol handling"
+documentation = "https://docs.rs/oasis-amqp"
+repository = "https://github.com/djc/corda-rpc"
+license = "Apache-2.0"
+workspace = ".."
+readme = "../README.md"
 
 [dependencies]
 bytes = "0.5"

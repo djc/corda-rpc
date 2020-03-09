@@ -3,12 +3,17 @@ name = "corda-rpc"
 version = "0.1.0"
 authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
 edition = "2018"
-publish = false
+description = "Toolkit for doing Corda RPC from Rust"
+documentation = "https://docs.rs/corda-rpc"
+repository = "https://github.com/djc/corda-rpc"
+license = "Apache-2.0"
+workspace = ".."
+readme = "../README.md"
 
 [dependencies]
 futures = "0.3"
-oasis-amqp = { path = "../oasis-amqp" }
-oasis-amqp-derive = { path = "../oasis-amqp-derive" }
+oasis-amqp = { version = "0.1", path = "../oasis-amqp" }
+oasis-amqp-derive = { version = "0.1", path = "../oasis-amqp-derive" }
 rand = "0.7"
 serde = { version = "1", features = ["derive"] }
 serde_bytes = { version = "0.11" }
