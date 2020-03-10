@@ -21,7 +21,8 @@ pub struct Frame<'a> {
 impl<'a> Frame<'a> {
     pub(crate) fn decode(doff: u8, buf: &'a [u8]) -> Result<Self, crate::Error> {
         let (channel, buf) = buf.split_at(2);
-        let channel = u16::from_be_bytes(channel.try_into().unwrap());
+        let channel =
+            u16::from_be_bytes(channel.try_into().map_err(|_| crate::Error::InvalidData)?);
 
         let (extended, buf) = buf.split_at((doff - 2) as usize);
         let extended_header = if !extended.is_empty() {
