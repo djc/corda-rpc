@@ -38,9 +38,9 @@ pub enum Mechanism {
 #[amqp(descriptor("amqp:sasl-outcome:list", 0x00000000_00000044))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Outcome<'a> {
-    code: Code,
+    pub code: Code,
     #[serde(borrow)]
-    additional_data: Option<&'a Bytes>,
+    pub additional_data: Option<&'a Bytes>,
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
