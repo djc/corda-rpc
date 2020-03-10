@@ -23,10 +23,11 @@ impl Decoder for Codec {
             return Ok(None);
         }
 
-        let bytes = if &src[..4] == b"AMQP" && src.len() >= 8 {
-            src.split_to(8).freeze()
+        let length_or_proto_tag = &src[..4];
+        let bytes = if length_or_proto_tag == b"AMQP" && src.len() >= PROTO_HEADER_LENGTH {
+            src.split_to(PROTO_HEADER_LENGTH).freeze()
         } else {
-            let len = u32::from_be_bytes((&src[..4]).try_into().unwrap()) as usize;
+            let len = u32::from_be_bytes((length_or_proto_tag).try_into().unwrap()) as usize;
             if src.len() >= len {
                 src.split_to(len).freeze().split_off(4)
             } else {
@@ -256,3 +257,4 @@ impl From<TryFromSliceError> for Error {
 pub const MIN_MAX_FRAME_SIZE: usize = 512;
 pub const AMQP_PROTO_HEADER: &[u8] = b"AMQP\x00\x01\x00\x00";
 pub const SASL_PROTO_HEADER: &[u8] = b"AMQP\x03\x01\x00\x00";
+pub const PROTO_HEADER_LENGTH: usize = 8;
