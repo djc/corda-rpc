@@ -90,3 +90,52 @@ pub struct Choice<'a> {
 pub struct TransformsSchema {}
 
 pub const CORDA_MAGIC: &[u8; 7] = b"corda\x01\x00";
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use oasis_amqp::ser;
+
+    #[test]
+    fn encode() {
+        let envelope = Envelope {
+            obj: ObjectList(amqp::List::default()),
+            schema: Schema {
+                types: vec![TypeNotation::RestrictedType(RestrictedType {
+                    name: "java.util.List<java.lang.Object>",
+                    label: None,
+                    provides: amqp::List::default(),
+                    source: "list",
+                    descriptor: Descriptor {
+                        name: Some("net.corda:1BLPJgNvsxdvPcbrIQd87g==".into()),
+                        code: None,
+                    },
+                    choices: amqp::List::default(),
+                })]
+                .into(),
+            },
+        };
+
+        let mut body = vec![];
+        body.extend_from_slice(CORDA_MAGIC);
+        body.push(SectionId::DataAndStop as u8);
+        ser::into_bytes(&envelope, &mut body).unwrap();
+        assert_eq!(
+            body,
+            vec![
+                99, 111, 114, 100, 97, 1, 0, 0, 0, 128, 197, 98, 0, 0, 0, 0, 0, 1, 208, 0, 0, 0,
+                212, 0, 0, 0, 2, 0, 163, 34, 110, 101, 116, 46, 99, 111, 114, 100, 97, 58, 49, 66,
+                76, 80, 74, 103, 78, 118, 115, 120, 100, 118, 80, 99, 98, 114, 73, 81, 100, 56, 55,
+                103, 61, 61, 208, 0, 0, 0, 4, 0, 0, 0, 0, 0, 128, 197, 98, 0, 0, 0, 0, 0, 2, 208,
+                0, 0, 0, 147, 0, 0, 0, 1, 208, 0, 0, 0, 138, 0, 0, 0, 1, 0, 128, 197, 98, 0, 0, 0,
+                0, 0, 6, 208, 0, 0, 0, 119, 0, 0, 0, 6, 161, 32, 106, 97, 118, 97, 46, 117, 116,
+                105, 108, 46, 76, 105, 115, 116, 60, 106, 97, 118, 97, 46, 108, 97, 110, 103, 46,
+                79, 98, 106, 101, 99, 116, 62, 64, 208, 0, 0, 0, 4, 0, 0, 0, 0, 161, 4, 108, 105,
+                115, 116, 0, 128, 197, 98, 0, 0, 0, 0, 0, 3, 208, 0, 0, 0, 41, 0, 0, 0, 2, 163, 34,
+                110, 101, 116, 46, 99, 111, 114, 100, 97, 58, 49, 66, 76, 80, 74, 103, 78, 118,
+                115, 120, 100, 118, 80, 99, 98, 114, 73, 81, 100, 56, 55, 103, 61, 61, 64, 208, 0,
+                0, 0, 4, 0, 0, 0, 0
+            ]
+        );
+    }
+}
