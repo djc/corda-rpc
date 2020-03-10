@@ -63,7 +63,7 @@ impl std::fmt::Debug for BytesFrame {
 }
 
 #[allow(clippy::large_enum_variant)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Frame<'a> {
     Amqp(amqp::Frame<'a>),
     Header(Protocol),

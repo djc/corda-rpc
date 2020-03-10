@@ -9,7 +9,7 @@ use serde_bytes::{ByteBuf, Bytes};
 
 use crate::{de, Described};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Frame<'a> {
     pub channel: u16,
     #[serde(borrow)]
@@ -45,7 +45,7 @@ impl<'a> Frame<'a> {
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Message<'a> {
     pub header: Option<Header>,
     #[serde(borrow)]
@@ -58,7 +58,7 @@ pub struct Message<'a> {
 }
 
 #[amqp(descriptor("amqp:header:list", 0x00000000_00000070))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Header {
     pub durable: Option<bool>,
     pub priority: Option<u8>,
@@ -68,15 +68,15 @@ pub struct Header {
 }
 
 #[amqp(descriptor("amqp:delivery-annotations:map", 0x00000000_00000071))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct DeliveryAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[amqp(descriptor("amqp:message-annotations:map", 0x00000000_00000072))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct MessageAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[amqp(descriptor("amqp:properties:list", 0x00000000_00000073))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Properties<'a> {
     pub message_id: Option<Cow<'a, str>>,
     pub user_id: Option<&'a Bytes>,
@@ -94,11 +94,11 @@ pub struct Properties<'a> {
 }
 
 #[amqp(descriptor("amqp:application-properties:map", 0x00000000_00000074))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct ApplicationProperties<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'a>>);
 
 #[amqp]
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum Body {
     Data(Data),
     Sequence(Sequence),
@@ -106,24 +106,24 @@ pub enum Body {
 }
 
 #[amqp(descriptor("amqp:data:binary", 0x00000000_00000075))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Data(pub ByteBuf);
 
 #[amqp(descriptor("amqp:amqp-sequence:list", 0x00000000_00000076))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Sequence {}
 
 #[amqp(descriptor("amqp:value:*", 0x00000000_00000077))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Value {}
 
 #[amqp(descriptor("amqp:footer:map", 0x00000000_00000078))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Footer<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
 
 #[allow(clippy::large_enum_variant)]
 #[amqp]
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum Performative<'a> {
     Open(Open<'a>),
     Begin(Begin<'a>),
@@ -136,7 +136,7 @@ pub enum Performative<'a> {
 }
 
 #[amqp(descriptor("amqp:open:list", 0x00000000_00000010))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Open<'a> {
     pub container_id: &'a str,
     pub hostname: Option<&'a str>,
@@ -150,7 +150,7 @@ pub struct Open<'a> {
 }
 
 #[amqp(descriptor("amqp:begin:list", 0x00000000_00000011))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Begin<'a> {
     pub remote_channel: Option<u16>,
     pub next_outgoing_id: u32,
@@ -164,7 +164,7 @@ pub struct Begin<'a> {
 }
 
 #[amqp(descriptor("amqp:attach:list", 0x00000000_00000012))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Attach<'a> {
     pub name: String,
     pub handle: u32,
@@ -184,7 +184,7 @@ pub struct Attach<'a> {
 }
 
 #[amqp(descriptor("amqp:flow:list", 0x00000000_00000013))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Flow<'a> {
     pub next_incoming_id: Option<u32>,
     pub incoming_window: u32,
@@ -201,7 +201,7 @@ pub struct Flow<'a> {
 }
 
 #[amqp(descriptor("amqp:transfer:list", 0x00000000_00000014))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Transfer {
     pub handle: u32,
     pub delivery_id: Option<u32>,
@@ -217,7 +217,7 @@ pub struct Transfer {
 }
 
 #[amqp(descriptor("amqp:disposition:list", 0x00000000_00000015))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Disposition {
     pub role: Role,
     pub first: u32,
@@ -228,7 +228,7 @@ pub struct Disposition {
 }
 
 #[amqp(descriptor("amqp:detach:list", 0x00000000_00000016))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Detach<'a> {
     pub handle: u32,
     pub closed: Option<bool>,
@@ -237,14 +237,14 @@ pub struct Detach<'a> {
 }
 
 #[amqp(descriptor("amqp:close:list", 0x00000000_00000018))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Close<'a> {
     #[serde(borrow)]
     pub error: Option<Error<'a>>,
 }
 
 #[amqp(descriptor("amqp:error:list", 0x00000000_0000001d))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Error<'a> {
     #[serde(borrow)]
     condition: &'a str,
@@ -252,7 +252,7 @@ pub struct Error<'a> {
     info: Option<Vec<(&'a Bytes, &'a Bytes)>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize)]
 pub enum Role {
     Sender,
     Receiver,
@@ -271,7 +271,7 @@ impl Serialize for Role {
 }
 
 #[amqp(descriptor("amqp:source:list", 0x00000000_00000028))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Source<'a> {
     pub address: Option<String>,
     pub durable: Option<TerminusDurability>,
@@ -287,7 +287,7 @@ pub struct Source<'a> {
     pub capabilities: Option<Vec<&'a str>>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 pub enum TerminusDurability {
     None,
     Configuration,
@@ -313,7 +313,7 @@ impl Serialize for TerminusDurability {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum DistributionMode {
     Move,
@@ -321,7 +321,7 @@ pub enum DistributionMode {
 }
 
 #[amqp]
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum DeliveryState {
     Received(Received),
@@ -334,7 +334,7 @@ pub enum DeliveryState {
 }
 
 #[amqp]
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Outcome {
     Received(Received),
@@ -346,35 +346,35 @@ pub enum Outcome {
 }
 
 #[amqp(descriptor("amqp:received:list", 0x00000000_00000023))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Received {}
 
 #[amqp(descriptor("amqp:accepted:list", 0x00000000_00000024))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Accepted {}
 
 #[amqp(descriptor("amqp:rejected:list", 0x00000000_00000025))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Rejected {}
 
 #[amqp(descriptor("amqp:released:list", 0x00000000_00000026))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Released {}
 
 #[amqp(descriptor("amqp:modified:list", 0x00000000_00000027))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Modified {}
 
 #[amqp(descriptor("amqp:declared:list", 0x00000000_00000033))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Declared {}
 
 #[amqp(descriptor("amqp:transactional-state:list", 0x00000000_00000034))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct TransactionalState {}
 
 #[amqp(descriptor("amqp:target:list", 0x00000000_00000029))]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Target<'a> {
     pub address: Option<String>,
     pub durable: Option<u32>,
@@ -386,7 +386,7 @@ pub struct Target<'a> {
     pub capabilities: Option<Vec<&'a str>>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ExpiryPolicy {
     LinkDetach,
@@ -395,20 +395,20 @@ pub enum ExpiryPolicy {
     Never,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub enum SenderSettleMode {
     Unsettled,
     Settled,
     Mixed,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub enum ReceiverSettleMode {
     First,
     Second,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 #[serde(rename = "amqp:symbol")]
 pub struct Symbol<'a>(&'a str);
 
@@ -437,7 +437,7 @@ impl<'de> serde::de::Visitor<'de> for SymbolVisitor {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, PartialEq)]
 #[serde(transparent)]
 pub struct List<T>(pub Vec<T>);
 
@@ -469,7 +469,7 @@ where
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub enum Any<'a> {
     None,
     Bool(bool),

@@ -5,7 +5,7 @@ use serde_bytes::Bytes;
 use crate::Described;
 
 #[amqp]
-#[derive(Debug, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum Frame<'a> {
     Mechanisms(Mechanisms),
     Init(Init<'a>),
@@ -13,13 +13,13 @@ pub enum Frame<'a> {
 }
 
 #[amqp(descriptor("amqp:sasl-mechanisms:list", 0x00000000_00000040))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Mechanisms {
-    sasl_server_mechanisms: Vec<Mechanism>,
+    pub sasl_server_mechanisms: Vec<Mechanism>,
 }
 
 #[amqp(descriptor("amqp:sasl-init:list", 0x00000000_00000041))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Init<'a> {
     pub mechanism: Mechanism,
     #[serde(borrow)]
@@ -27,7 +27,7 @@ pub struct Init<'a> {
     pub hostname: Option<&'a str>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Mechanism {
     Anonymous,
@@ -36,14 +36,14 @@ pub enum Mechanism {
 }
 
 #[amqp(descriptor("amqp:sasl-outcome:list", 0x00000000_00000044))]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Outcome<'a> {
     code: Code,
     #[serde(borrow)]
     additional_data: Option<&'a Bytes>,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub enum Code {
     Ok,
     Auth,
