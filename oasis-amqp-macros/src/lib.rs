@@ -232,58 +232,56 @@ fn struct_serde(
     def: syn::ItemStruct,
     meta: proc_macro::TokenStream,
 ) -> (proc_macro::TokenStream, Option<proc_macro::TokenStream>) {
-    let (name, code) = if !meta.is_empty() {
-        let list = syn::parse::<syn::MetaList>(meta).unwrap();
-        if list.path.is_ident("descriptor") {
-            if list.nested.len() == 2 {
-                let name = if let Some(syn::NestedMeta::Lit(syn::Lit::Str(s))) = list.nested.first()
-                {
-                    s.value()
-                } else {
-                    panic!("could not extract descriptor name from attribute");
-                };
+    if meta.is_empty() {
+        panic!("no arguments found for attribute on struct type");
+    }
 
-                let id = if let Some(syn::NestedMeta::Lit(syn::Lit::Int(s))) = list.nested.last() {
-                    s.clone()
-                } else {
-                    panic!("could not extract descriptor ID from attribute");
-                };
+    let list = syn::parse::<syn::MetaList>(meta).unwrap();
+    if !list.path.is_ident("descriptor") {
+        panic!("invalid attribute {:?}", list.path.get_ident().unwrap());
+    }
 
-                (Some(name), Some(id))
+    let (name, code) = if list.nested.len() == 2 {
+        let name = if let Some(syn::NestedMeta::Lit(syn::Lit::Str(s))) = list.nested.first() {
+            s.value()
+        } else {
+            panic!("could not extract descriptor name from attribute");
+        };
+
+        let id = if let Some(syn::NestedMeta::Lit(syn::Lit::Int(s))) = list.nested.last() {
+            s.clone()
+        } else {
+            panic!("could not extract descriptor ID from attribute");
+        };
+
+        (Some(name), Some(id))
+    } else {
+        assert_eq!(list.nested.len(), 1);
+        let pair =
+            if let Some(syn::NestedMeta::Meta(syn::Meta::NameValue(pair))) = list.nested.first() {
+                pair
             } else {
-                assert_eq!(list.nested.len(), 1);
-                let pair = if let Some(syn::NestedMeta::Meta(syn::Meta::NameValue(pair))) =
-                    list.nested.first()
-                {
-                    pair
-                } else {
-                    panic!("could not extract descriptor name or code");
-                };
+                panic!("could not extract descriptor name or code");
+            };
 
-                if pair.path.is_ident("name") {
-                    if let syn::Lit::Str(s) = &pair.lit {
-                        (Some(s.value()), None)
-                    } else {
-                        panic!("invalid type for descriptor name");
-                    }
-                } else if pair.path.is_ident("code") {
-                    if let syn::Lit::Int(s) = &pair.lit {
-                        (None, Some(s.clone()))
-                    } else {
-                        panic!("invalid type for descriptor name");
-                    }
-                } else {
-                    panic!(
-                        "invalid descriptor element {:?}",
-                        pair.path.get_ident().unwrap()
-                    );
-                }
+        if pair.path.is_ident("name") {
+            if let syn::Lit::Str(s) = &pair.lit {
+                (Some(s.value()), None)
+            } else {
+                panic!("invalid type for descriptor name");
+            }
+        } else if pair.path.is_ident("code") {
+            if let syn::Lit::Int(s) = &pair.lit {
+                (None, Some(s.clone()))
+            } else {
+                panic!("invalid type for descriptor name");
             }
         } else {
-            panic!("invalid attribute {:?}", list.path.get_ident().unwrap());
+            panic!(
+                "invalid descriptor element {:?}",
+                pair.path.get_ident().unwrap()
+            );
         }
-    } else {
-        panic!("no arguments found for attribute on struct type");
     };
 
     let ident = def.ident;
