@@ -1,6 +1,6 @@
 [package]
 name = "corda-rpc"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
 edition = "2018"
 description = "Toolkit for doing Corda RPC from Rust"

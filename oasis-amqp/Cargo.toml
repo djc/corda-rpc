@@ -1,6 +1,6 @@
 [package]
 name = "oasis-amqp"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
 edition = "2018"
 description = "Asynchronous AMQP 1.0 protocol handling"
@@ -14,7 +14,7 @@ readme = "../README.md"
 bytes = "0.5"
 err-derive = "0.2"
 futures = "0.3"
-oasis-amqp-macros = { version = "0.1", path = "../oasis-amqp-macros" }
+oasis-amqp-macros = { version = "0.1.1", path = "../oasis-amqp-macros" }
 serde = { version = "1", features = ["derive"] }
 serde_bytes = { version = "0.11" }
 tokio = { version = "0.2.13", features = ["dns", "tcp"] }
