@@ -262,4 +262,26 @@ fn transfer() {
     assert_eq!(transfer.to_vec().unwrap(), Vec::from(
         &b"\x00\x00\x00a\x02\x00\x00\x00\x00S\x14\xd0\x00\x00\x00\x13\x00\x00\x00\x0bCC\xa0\x03barC@@@@@@@\x00Ss\xd0\x00\x00\x00\"\x00\x00\x00\r\xa1\x03foo\xa0\x05user1@@\xa1\x06sender@@@@@@@@\x00St\xd1\x00\x00\x00\x04\x00\x00\x00\x00\x00Su\xa0\x03baz"[..]
     ));
+
+    let mut codec = Codec {};
+    let mut server = BytesMut::new();
+    server
+        .extend_from_slice(&b"\x00\x00\x00\x16\x02\x00\x00\x00\x00S\x15\xc0\t\x05ACCA\x00S$E"[..]);
+    let wrapped = codec.decode(&mut server).unwrap().unwrap();
+    assert_eq!(
+        wrapped.frame,
+        Frame::Amqp(amqp::Frame {
+            channel: 0,
+            extended_header: None,
+            performative: amqp::Performative::Disposition(amqp::Disposition {
+                role: amqp::Role::Receiver,
+                first: 0,
+                last: Some(0),
+                settled: Some(true),
+                state: Some(amqp::DeliveryState::Accepted(amqp::Accepted {})),
+                batchable: None,
+            }),
+            message: None,
+        })
+    );
 }

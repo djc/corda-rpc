@@ -222,9 +222,9 @@ pub struct Disposition {
     pub role: Role,
     pub first: u32,
     pub last: Option<u32>,
-    settled: Option<bool>,
-    state: Option<DeliveryState>,
-    batchable: Option<bool>,
+    pub settled: Option<bool>,
+    pub state: Option<DeliveryState>,
+    pub batchable: Option<bool>,
 }
 
 #[amqp(descriptor("amqp:detach:list", 0x00000000_00000016))]
