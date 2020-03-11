@@ -371,7 +371,6 @@ impl From<TryFromSliceError> for Error {
     }
 }
 
-pub const MIN_MAX_FRAME_SIZE: usize = 512;
 pub const AMQP_PROTO_HEADER: &[u8] = b"AMQP\x00\x01\x00\x00";
 pub const SASL_PROTO_HEADER: &[u8] = b"AMQP\x03\x01\x00\x00";
 pub const PROTO_HEADER_LENGTH: usize = 8;
