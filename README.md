@@ -1,5 +1,9 @@
 # corda-rpc: Rust libraries for doing Corda RPC
 
+[![Build status](https://github.com/djc/corda-rpc/workflows/CI/badge.svg)](https://github.com/djc/corda-rpc/actions?query=workflow%3ACI)
+[![Coverage status](https://coveralls.io/repos/github/djc/corda-rpc/badge.svg)](https://coveralls.io/github/djc/corda-rpc)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+
 [Corda](https://www.corda.net/) is an open source blockchain platform. To communicate with it,
 your code needs to talk [AMQP 1.0](https://www.amqp.org/) with the broker run by the Corda node.
 This code runs on stable Rust, and uses async/await using the Tokio runtime for networking.
