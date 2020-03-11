@@ -5,6 +5,13 @@ use quote::TokenStreamExt;
 use quote::{format_ident, quote};
 use syn;
 
+/// Implement AMQP 1.0-related functionality for structs and enums
+///
+/// For enums: this macro provides a custom implementation of serde::Deserialize. Only newtype
+/// variants and unit variants are supported; all variants within an enum should be of the same
+/// type.
+///
+/// For structs: this macro is used to implement the `oasis-amqp::Described` trait.
 #[proc_macro_attribute]
 pub fn amqp(
     attr: proc_macro::TokenStream,
