@@ -4,8 +4,8 @@ use bytes::BytesMut;
 use serde_bytes::{ByteBuf, Bytes};
 use tokio_util::codec::Decoder;
 
+use oasis_amqp::proto::{Codec, Frame, Protocol};
 use oasis_amqp::{amqp, sasl};
-use oasis_amqp::{Codec, Frame, Protocol};
 
 #[test]
 fn login() {
