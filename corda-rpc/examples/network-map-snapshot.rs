@@ -2,13 +2,10 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::time::SystemTime;
 
-use futures::{sink::SinkExt, stream::StreamExt};
-use oasis_amqp::{amqp, sasl, ser, Codec, Frame, Protocol};
+use oasis_amqp::{amqp, ser, Client};
 use rand::{self, Rng};
 use serde_bytes::{ByteBuf, Bytes};
 use tokio;
-use tokio::net::TcpStream;
-use tokio_util::codec::Framed;
 use uuid::Uuid;
 
 use corda_rpc::{
@@ -17,64 +14,13 @@ use corda_rpc::{
 
 #[tokio::main]
 async fn main() {
-    let stream = TcpStream::connect("127.0.0.1:10006").await.unwrap();
-    println!("local addr {:?}", stream.local_addr());
-    let mut transport = Framed::new(stream, Codec);
+    let mut client = Client::connect("localhost:10006").await.unwrap();
+    client.login("vxdir", "vxdir").await.unwrap();
+    client.open("vxweb").await.unwrap();
+    client.begin().await.unwrap();
 
-    transport
-        .send(&Frame::Header(Protocol::Sasl))
-        .await
-        .unwrap();
-    let _header = transport.next().await.unwrap().unwrap();
-    let _mechanisms = transport.next().await.unwrap().unwrap();
-
-    let init = Frame::Sasl(sasl::Frame::Init(sasl::Init {
-        mechanism: sasl::Mechanism::Plain,
-        initial_response: Some(Bytes::new(b"\x00vxdir\x00vxdir")),
-        hostname: None,
-    }));
-
-    transport.send(&init).await.unwrap();
-    let _outcome = transport.next().await.unwrap().unwrap();
-    let _header = transport.next().await.unwrap().unwrap();
-
-    let open = Frame::Amqp(amqp::Frame {
-        channel: 0,
-        extended_header: None,
-        performative: amqp::Performative::Open(amqp::Open {
-            container_id: "vx-web",
-            ..Default::default()
-        }),
-        message: None,
-    });
-
-    transport
-        .send(&Frame::Header(Protocol::Amqp))
-        .await
-        .unwrap();
-    transport.send(&open).await.unwrap();
-    let _opened = transport.next().await.unwrap().unwrap();
-
-    let begin = Frame::Amqp(amqp::Frame {
-        channel: 0,
-        extended_header: None,
-        performative: amqp::Performative::Begin(amqp::Begin {
-            remote_channel: None,
-            next_outgoing_id: 1,
-            incoming_window: 8,
-            outgoing_window: 8,
-            ..Default::default()
-        }),
-        message: None,
-    });
-
-    transport.send(&begin).await.unwrap();
-    let _begun = transport.next().await.unwrap().unwrap();
-
-    let attach = Frame::Amqp(amqp::Frame {
-        channel: 0,
-        extended_header: None,
-        performative: amqp::Performative::Attach(amqp::Attach {
+    client
+        .attach(amqp::Attach {
             name: "vx-web-sender".into(),
             handle: 0,
             role: amqp::Role::Sender,
@@ -95,13 +41,9 @@ async fn main() {
             offered_capabilities: None,
             desired_capabilities: None,
             properties: None,
-        }),
-        message: None,
-    });
-
-    transport.send(&attach).await.unwrap();
-    let _attached = transport.next().await.unwrap().unwrap();
-    let _flow = transport.next().await.unwrap().unwrap();
+        })
+        .await
+        .unwrap();
 
     let now = SystemTime::now();
     let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
@@ -150,33 +92,29 @@ async fn main() {
     ser::into_bytes(&envelope, &mut body).unwrap();
     println!("body: {:?}", body);
 
-    let transfer = Frame::Amqp(amqp::Frame {
-        channel: 0,
-        extended_header: None,
-        performative: amqp::Performative::Transfer(amqp::Transfer {
-            handle: 0,
-            delivery_id: Some(0),
-            delivery_tag: Some(ByteBuf::from(delivery_tag.as_bytes().to_vec())),
-            message_format: Some(0),
-            ..Default::default()
-        }),
-        message: Some(amqp::Message {
-            properties: Some(amqp::Properties {
-                message_id: Some(message_id.clone().into()),
-                reply_to: Some("vx-web-sender".into()),
-                user_id: Some(Bytes::new(b"vxdir")),
+    client
+        .transfer(
+            amqp::Transfer {
+                handle: 0,
+                delivery_id: Some(0),
+                delivery_tag: Some(ByteBuf::from(delivery_tag.as_bytes().to_vec())),
+                message_format: Some(0),
                 ..Default::default()
-            }),
-            application_properties: Some(amqp::ApplicationProperties(properties)),
-            body: Some(amqp::Body::Data(amqp::Data(ByteBuf::from(body)))),
-            ..Default::default()
-        }),
-    });
-
-    println!("send transfer: {:#?}", transfer);
-    transport.send(&transfer).await.unwrap();
-    let transferred = transport.next().await.unwrap().unwrap();
-    println!("read: {:#?}\n", transferred);
+            },
+            amqp::Message {
+                properties: Some(amqp::Properties {
+                    message_id: Some(message_id.clone().into()),
+                    reply_to: Some("vx-web-sender".into()),
+                    user_id: Some(Bytes::new(b"vxdir")),
+                    ..Default::default()
+                }),
+                application_properties: Some(amqp::ApplicationProperties(properties)),
+                body: Some(amqp::Body::Data(amqp::Data(ByteBuf::from(body)))),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
 
     /*
     let attach = Frame::Amqp(amqp::Frame {
@@ -210,6 +148,4 @@ async fn main() {
     println!("send transfer: {:#?}", attach);
     transport.send(attach).await.unwrap();
     */
-    let next = transport.next().await;
-    println!("read: {:#?}\n", next);
 }

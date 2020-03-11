@@ -4,13 +4,126 @@ use std::{fmt, io, mem, str};
 
 use bytes::{self, BufMut, BytesMut};
 use err_derive::Error;
+use futures::{sink::SinkExt, stream::StreamExt};
 use serde;
-use tokio_util::codec::{Decoder, Encoder};
+use serde_bytes::Bytes;
+use tokio::net::{TcpStream, ToSocketAddrs};
+use tokio_util::codec::{Decoder, Encoder, Framed};
 
 pub mod amqp;
 pub mod de;
 pub mod sasl;
 pub mod ser;
+
+pub struct Client {
+    transport: tokio_util::codec::Framed<TcpStream, Codec>,
+}
+
+impl Client {
+    pub async fn connect<A: ToSocketAddrs>(addr: A) -> Result<Self, ()> {
+        let stream = TcpStream::connect(addr).await.map_err(|_| ())?;
+        Ok(Self {
+            transport: Framed::new(stream, Codec),
+        })
+    }
+
+    /// Login with the given username and password
+    ///
+    /// Currently this only supports SASL PLAIN login.
+    pub async fn login(&mut self, user: &str, password: &str) -> Result<(), ()> {
+        self.transport
+            .send(&Frame::Header(Protocol::Sasl))
+            .await
+            .map_err(|_| ())?;
+        let _header = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        let _mechanisms = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+
+        let mut response = vec![0u8];
+        response.extend_from_slice(user.as_bytes());
+        response.push(0);
+        response.extend_from_slice(password.as_bytes());
+
+        let init = Frame::Sasl(sasl::Frame::Init(sasl::Init {
+            mechanism: sasl::Mechanism::Plain,
+            initial_response: Some(Bytes::new(&response)),
+            hostname: None,
+        }));
+
+        self.transport.send(&init).await.map_err(|_| ())?;
+        let _outcome = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        let _header = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        self.transport
+            .send(&Frame::Header(Protocol::Amqp))
+            .await
+            .map_err(|_| ())
+    }
+
+    pub async fn open(&mut self, container_id: &str) -> Result<(), ()> {
+        let open = Frame::Amqp(amqp::Frame {
+            channel: 0,
+            extended_header: None,
+            performative: amqp::Performative::Open(amqp::Open {
+                container_id,
+                ..Default::default()
+            }),
+            message: None,
+        });
+
+        self.transport.send(&open).await.map_err(|_| ())?;
+        let _opened = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        Ok(())
+    }
+
+    pub async fn begin(&mut self) -> Result<(), ()> {
+        let begin = Frame::Amqp(amqp::Frame {
+            channel: 0,
+            extended_header: None,
+            performative: amqp::Performative::Begin(amqp::Begin {
+                remote_channel: None,
+                next_outgoing_id: 1,
+                incoming_window: 8,
+                outgoing_window: 8,
+                ..Default::default()
+            }),
+            message: None,
+        });
+
+        self.transport.send(&begin).await.map_err(|_| ())?;
+        let _begun = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        Ok(())
+    }
+
+    pub async fn attach(&mut self, attach: amqp::Attach<'_>) -> Result<(), ()> {
+        let attach = Frame::Amqp(amqp::Frame {
+            channel: 0,
+            extended_header: None,
+            performative: amqp::Performative::Attach(attach),
+            message: None,
+        });
+
+        self.transport.send(&attach).await.map_err(|_| ())?;
+        let _attached = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        let _flow = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        Ok(())
+    }
+
+    pub async fn transfer(
+        &mut self,
+        transfer: amqp::Transfer,
+        message: amqp::Message<'_>,
+    ) -> Result<(), ()> {
+        let transfer = Frame::Amqp(amqp::Frame {
+            channel: 0,
+            extended_header: None,
+            performative: amqp::Performative::Transfer(transfer),
+            message: Some(message),
+        });
+
+        self.transport.send(&transfer).await.map_err(|_| ())?;
+        let _transferred = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        Ok(())
+    }
+}
 
 pub struct Codec;
 

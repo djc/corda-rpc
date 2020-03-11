@@ -13,7 +13,9 @@ readme = "../README.md"
 [dependencies]
 bytes = "0.5"
 err-derive = "0.2"
+futures = "0.3"
 oasis-amqp-macros = { version = "0.1", path = "../oasis-amqp-macros" }
 serde = { version = "1", features = ["derive"] }
 serde_bytes = { version = "0.11" }
+tokio = { version = "0.2.13", features = ["dns", "tcp"] }
 tokio-util = { version = "0.3", features = ["codec"] }
