@@ -1,7 +1,7 @@
 # corda-rpc: Rust libraries for doing Corda RPC
 
 [![Build status](https://github.com/djc/corda-rpc/workflows/CI/badge.svg)](https://github.com/djc/corda-rpc/actions?query=workflow%3ACI)
-[![Coverage status](https://coveralls.io/repos/github/djc/corda-rpc/badge.svg)](https://coveralls.io/github/djc/corda-rpc)
+[![Coverage status](https://codecov.io/gh/djc/corda-rpc/branch/master/graph/badge.svg)](https://codecov.io/gh/djc/corda-rpc)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 [Corda](https://www.corda.net/) is an open source blockchain platform. To communicate with it,
