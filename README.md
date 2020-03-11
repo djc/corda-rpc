@@ -13,7 +13,7 @@ This project was written within [ING Bank](https://github.com/ing-bank/), while 
 ValueX project to create a digital securities distribution platform for institutional investors
 The provided functionality is separated into three crates, as explained below.
 
-The current state of the project can be described as pre-alpha. So far I have worked to get a simple
+The **current state of the project can be described as pre-alpha**. So far I have worked to get a simple
 RPC call to the Corda node to work, and everything provided is only complete insofar as needed for
 that purpose. The example code in [network-map-snapshot](corda-rpc/examples/network-map-snapshot.rs)
 will trigger an RPC call on the Corda node as desired, but the return path for the RPC result is
