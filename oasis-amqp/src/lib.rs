@@ -170,8 +170,10 @@ impl Protocol {
     }
 }
 
+/*
+
 #[derive(Debug)]
-pub enum ConnectionState {
+enum ConnectionState {
     Start,
     HdrRcvd,
     HdrSent,
@@ -188,7 +190,7 @@ pub enum ConnectionState {
     End,
 }
 
-pub struct Session {
+struct Session {
     pub next_incoming_id: u32,
     pub incoming_window: u32,
     pub next_outgoing_id: u32,
@@ -197,7 +199,7 @@ pub struct Session {
     pub remote_outgoing_window: u32,
 }
 
-pub enum SessionState {
+enum SessionState {
     Unmapped,
     BeginSent,
     BeginRcvd,
@@ -206,6 +208,8 @@ pub enum SessionState {
     EndRcvd,
     Discarding,
 }
+
+*/
 
 pub trait Described {
     const NAME: Option<&'static [u8]>;
