@@ -1,0 +1,2 @@
+ignore:
+  - "oasis-amqp-macros" # coverage of procedural macros has not been set up
