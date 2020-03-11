@@ -59,19 +59,19 @@ fn setup() {
         channel: 0,
         extended_header: None,
         performative: amqp::Performative::Open(amqp::Open {
-            container_id: "vx-web",
+            container_id: "source",
             ..Default::default()
         }),
         message: None,
     });
     assert_eq!(open.to_vec().unwrap(), Vec::from(
-        &b"\x00\x00\x00$\x02\x00\x00\x00\x00S\x10\xd0\x00\x00\x00\x14\x00\x00\x00\t\xa1\x06vx-web@@@@@@@@"[..]
+        &b"\x00\x00\x00$\x02\x00\x00\x00\x00S\x10\xd0\x00\x00\x00\x14\x00\x00\x00\t\xa1\x06source@@@@@@@@"[..]
     ));
 
     let mut codec = Codec {};
     let mut server = BytesMut::new();
     server.extend_from_slice(
-        &b"\x00\x00\x00\xa8\x02\x00\x00\x00\x00S\x10\xc0\x9b\n\xa1\x03RPC@p\x00\x02\x00\x00`\xff\xffp\x00\x00u0@@\xe0M\x04\xa3\x1dsole-connection-for-container\x10DELAYED_DELIVERY\x0bSHARED-SUBS\x0fANONYMOUS-RELAY@\xc13\x04\xa3\x07product\xa1\x17apache-activemq-artemis\xa3\x07version\xa1\x052.6.2"[..]
+        &b"\x00\x00\x00\xa8\x02\x00\x00\x00\x00S\x10\xc0\x9b\n\xa1\x03foo@p\x00\x02\x00\x00`\xff\xffp\x00\x00u0@@\xe0M\x04\xa3\x1dsole-connection-for-container\x10DELAYED_DELIVERY\x0bSHARED-SUBS\x0fANONYMOUS-RELAY@\xc13\x04\xa3\x07product\xa1\x17apache-activemq-artemis\xa3\x07version\xa1\x052.6.2"[..]
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
@@ -80,7 +80,7 @@ fn setup() {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Open(amqp::Open {
-                container_id: "RPC",
+                container_id: "foo",
                 max_frame_size: Some(131_072),
                 channel_max: Some(65_535),
                 idle_timeout: Some(30_000),
@@ -138,17 +138,17 @@ fn setup() {
         channel: 0,
         extended_header: None,
         performative: amqp::Performative::Attach(amqp::Attach {
-            name: "vx-web-sender".into(),
+            name: "my-foo-sender".into(),
             handle: 0,
             role: amqp::Role::Sender,
             snd_settle_mode: None,
             rcv_settle_mode: None,
             source: Some(amqp::Source {
-                address: Some("vx-web".into()),
+                address: Some("source".into()),
                 ..Default::default()
             }),
             target: Some(amqp::Target {
-                address: Some("rpc.server".into()),
+                address: Some("target-bar".into()),
                 ..Default::default()
             }),
             unsettled: None,
@@ -162,12 +162,12 @@ fn setup() {
         message: None,
     });
     assert_eq!(attach.to_vec().unwrap(), Vec::from(
-        &b"\x00\x00\x00j\x02\x00\x00\x00\x00S\x12\xd0\x00\x00\x00Z\x00\x00\x00\x0e\xa1\rvx-web-senderCB@@\x00S(\xd0\x00\x00\x00\x16\x00\x00\x00\x0b\xa1\x06vx-web@@@@@@@@@@\x00S)\xd0\x00\x00\x00\x16\x00\x00\x00\x07\xa1\nrpc.server@@@@@@@@C@@@@"[..]
+        &b"\x00\x00\x00j\x02\x00\x00\x00\x00S\x12\xd0\x00\x00\x00Z\x00\x00\x00\x0e\xa1\rmy-foo-senderCB@@\x00S(\xd0\x00\x00\x00\x16\x00\x00\x00\x0b\xa1\x06source@@@@@@@@@@\x00S)\xd0\x00\x00\x00\x16\x00\x00\x00\x07\xa1\ntarget-bar@@@@@@@@C@@@@"[..]
     ));
 
     let mut server = BytesMut::new();
     server.extend_from_slice(
-        &b"\x00\x00\x00C\x02\x00\x00\x00\x00S\x12\xc06\x07\xa1\rvx-web-senderCAP\x02P\x00\x00S(\xc0\t\x01\xa1\x06vx-web\x00S)\xc0\r\x01\xa1\nrpc.server"[..]
+        &b"\x00\x00\x00C\x02\x00\x00\x00\x00S\x12\xc06\x07\xa1\rmy-foo-senderCAP\x02P\x00\x00S(\xc0\t\x01\xa1\x06source\x00S)\xc0\r\x01\xa1\ntarget-bar"[..]
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
@@ -176,17 +176,17 @@ fn setup() {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Attach(amqp::Attach {
-                name: "vx-web-sender".into(),
+                name: "my-foo-sender".into(),
                 handle: 0,
                 role: amqp::Role::Receiver,
                 snd_settle_mode: Some(amqp::SenderSettleMode::Mixed),
                 rcv_settle_mode: Some(amqp::ReceiverSettleMode::First),
                 source: Some(amqp::Source {
-                    address: Some("vx-web".into()),
+                    address: Some("source".into()),
                     ..Default::default()
                 }),
                 target: Some(amqp::Target {
-                    address: Some("rpc.server".into()),
+                    address: Some("target-bar".into()),
                     ..Default::default()
                 }),
                 unsettled: None,
