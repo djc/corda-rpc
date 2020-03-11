@@ -1,5 +1,7 @@
+use std::collections::HashMap;
+
 use bytes::BytesMut;
-use serde_bytes::Bytes;
+use serde_bytes::{ByteBuf, Bytes};
 use tokio_util::codec::Decoder;
 
 use oasis_amqp::{amqp, sasl};
@@ -227,4 +229,37 @@ fn setup() {
             message: None,
         })
     );
+}
+
+#[test]
+fn transfer() {
+    // keeping this empty because HashMap RandomState makes the serialized output indeterministic
+    let properties = HashMap::new();
+    let (message_id, delivery_tag) = ("foo", "bar");
+    let body = &b"baz"[..];
+    let transfer = Frame::Amqp(amqp::Frame {
+        channel: 0,
+        extended_header: None,
+        performative: amqp::Performative::Transfer(amqp::Transfer {
+            handle: 0,
+            delivery_id: Some(0),
+            delivery_tag: Some(ByteBuf::from(delivery_tag.as_bytes().to_vec())),
+            message_format: Some(0),
+            ..Default::default()
+        }),
+        message: Some(amqp::Message {
+            properties: Some(amqp::Properties {
+                message_id: Some(message_id.into()),
+                reply_to: Some("sender".into()),
+                user_id: Some(Bytes::new(b"user1")),
+                ..Default::default()
+            }),
+            application_properties: Some(amqp::ApplicationProperties(properties)),
+            body: Some(amqp::Body::Data(amqp::Data(ByteBuf::from(body)))),
+            ..Default::default()
+        }),
+    });
+    assert_eq!(transfer.to_vec().unwrap(), Vec::from(
+        &b"\x00\x00\x00a\x02\x00\x00\x00\x00S\x14\xd0\x00\x00\x00\x13\x00\x00\x00\x0bCC\xa0\x03barC@@@@@@@\x00Ss\xd0\x00\x00\x00\"\x00\x00\x00\r\xa1\x03foo\xa0\x05user1@@\xa1\x06sender@@@@@@@@\x00St\xd1\x00\x00\x00\x04\x00\x00\x00\x00\x00Su\xa0\x03baz"[..]
+    ));
 }
