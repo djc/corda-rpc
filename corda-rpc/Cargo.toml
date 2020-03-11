@@ -11,12 +11,12 @@ workspace = ".."
 readme = "../README.md"
 
 [dependencies]
-oasis-amqp = { version = "0.1", path = "../oasis-amqp" }
+oasis-amqp = { version = "0.2", path = "../oasis-amqp" }
 oasis-amqp-macros = { version = "0.1", path = "../oasis-amqp-macros" }
-rand = "0.7"
 serde = { version = "1", features = ["derive"] }
-serde_bytes = { version = "0.11" }
-uuid = { version = "0.8", features = ["v4"] }
 
 [dev-dependencies]
+rand = "0.7"
+serde_bytes = { version = "0.11" }
+uuid = { version = "0.8", features = ["v4"] }
 tokio = { version = "0.2.13", features = ["macros"] }
