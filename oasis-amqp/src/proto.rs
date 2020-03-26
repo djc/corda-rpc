@@ -133,6 +133,10 @@ impl Client {
         let _transferred = self.transport.next().await.ok_or(()).map_err(|_| ())?;
         Ok(())
     }
+
+    pub async fn next(&mut self) -> Option<Result<BytesFrame, Error>> {
+        self.transport.next().await
+    }
 }
 
 pub struct Codec;
