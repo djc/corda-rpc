@@ -88,6 +88,7 @@ impl Client {
     }
 
     pub async fn attach(&mut self, attach: amqp::Attach<'_>) -> Result<(), ()> {
+        let is_sender = matches!(attach.role, amqp::Role::Sender);
         let attach = Frame::Amqp(amqp::Frame {
             channel: 0,
             extended_header: None,
@@ -97,7 +98,10 @@ impl Client {
 
         self.transport.send(&attach).await.map_err(|_| ())?;
         let _attached = self.transport.next().await.ok_or(()).map_err(|_| ())?;
-        let _flow = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        if is_sender {
+            let _flow = self.transport.next().await.ok_or(()).map_err(|_| ())?;
+        }
+
         Ok(())
     }
 
