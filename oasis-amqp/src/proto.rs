@@ -105,6 +105,18 @@ impl Client {
         Ok(())
     }
 
+    pub async fn flow(&mut self, flow: amqp::Flow<'_>) -> Result<(), ()> {
+        let flow = Frame::Amqp(amqp::Frame {
+            channel: 0,
+            extended_header: None,
+            performative: amqp::Performative::Flow(flow),
+            message: None,
+        });
+
+        self.transport.send(&flow).await.map_err(|_| ())?;
+        Ok(())
+    }
+
     pub async fn transfer(
         &mut self,
         transfer: amqp::Transfer,
