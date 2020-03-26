@@ -50,6 +50,49 @@ async fn main() {
         rand::thread_rng().gen::<u64>() & 0xefffffff_ffffffff,
     );
 
+    client
+        .attach(amqp::Attach {
+            name: rcv_queue_name.clone(),
+            handle: 1,
+            role: amqp::Role::Receiver,
+            snd_settle_mode: None,
+            rcv_settle_mode: None,
+            source: Some(amqp::Source {
+                address: Some(rcv_queue_name.clone()),
+                ..Default::default()
+            }),
+            target: Some(amqp::Target {
+                address: Some("vx-web".into()),
+                ..Default::default()
+            }),
+            unsettled: None,
+            incomplete_unsettled: None,
+            initial_delivery_count: None,
+            max_message_size: None,
+            offered_capabilities: None,
+            desired_capabilities: None,
+            properties: None,
+        })
+        .await
+        .unwrap();
+
+    client
+        .flow(amqp::Flow {
+            next_incoming_id: Some(1),
+            incoming_window: 2147483647,
+            next_outgoing_id: 1,
+            outgoing_window: 2147483647,
+            handle: Some(1),
+            delivery_count: Some(0),
+            link_credit: Some(1000),
+            available: None,
+            drain: None,
+            echo: None,
+            properties: None,
+        })
+        .await
+        .unwrap();
+
     let now = SystemTime::now();
     let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let timestamp = i64::try_from(timestamp.as_millis()).unwrap();
@@ -116,36 +159,6 @@ async fn main() {
         .await
         .unwrap();
 
-    /*
-    let attach = Frame::Amqp(amqp::Frame {
-        channel: 0,
-        extended_header: None,
-        performative: amqp::Performative::Attach(amqp::Attach {
-            name: rcv_queue_name.clone(),
-            handle: 1,
-            role: amqp::Role::Receiver,
-            snd_settle_mode: None,
-            rcv_settle_mode: None,
-            source: Some(amqp::Source {
-                address: Some(rcv_queue_name.clone()),
-                ..Default::default()
-            }),
-            target: Some(amqp::Target {
-                address: Some("vx-web".into()),
-                ..Default::default()
-            }),
-            unsettled: None,
-            incomplete_unsettled: None,
-            initial_delivery_count: None,
-            max_message_size: None,
-            offered_capabilities: None,
-            desired_capabilities: None,
-            properties: None,
-        }),
-        message: None,
-    });
-
-    println!("send transfer: {:#?}", attach);
-    transport.send(attach).await.unwrap();
-    */
+    let next = client.next().await.unwrap();
+    println!("read: {:#?}\n", next);
 }
