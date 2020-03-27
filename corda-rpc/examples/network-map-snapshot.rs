@@ -102,7 +102,6 @@ async fn main() {
     let delivery_tag = Uuid::new_v4();
 
     let mut properties = HashMap::new();
-    properties.insert("JMSReplyTo", amqp::Any::Str(rcv_queue_name.clone().into()));
     properties.insert("_AMQ_VALIDATED_USER", amqp::Any::Str("vxdir".into()));
     properties.insert("tag", amqp::Any::I32(0));
     properties.insert("method-name", amqp::Any::Str("networkMapSnapshot".into()));
