@@ -134,6 +134,7 @@ impl Client {
         Ok(())
     }
 
+    #[allow(clippy::should_implement_trait)]
     pub async fn next(&mut self) -> Option<Result<BytesFrame, Error>> {
         self.transport.next().await
     }
