@@ -132,7 +132,6 @@ async fn main() {
         },
     };
     ser::into_bytes(&envelope, &mut body).unwrap();
-    println!("body: {:?}", body);
 
     client
         .transfer(
@@ -158,6 +157,7 @@ async fn main() {
         .await
         .unwrap();
 
+    println!("waiting for response...");
     let next = client.next().await.unwrap();
     println!("read: {:#?}\n", next);
 }
