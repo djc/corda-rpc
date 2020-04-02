@@ -310,11 +310,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         visitor.visit_borrowed_bytes(self.parse_bytes()?)
     }
 
-    fn deserialize_byte_buf<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        unimplemented!()
+        visitor.visit_byte_buf(self.parse_bytes()?.to_owned())
     }
 
     fn deserialize_option<V>(self, visitor: V) -> Result<V::Value>
