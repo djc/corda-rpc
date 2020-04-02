@@ -62,6 +62,15 @@ impl<'de> Deserializer<'de> {
         })
     }
 
+    fn parse_descriptor(&mut self) -> Result<Descriptor<'de>> {
+        self.assume(0)?;
+        match self.peek()? {
+            0x44 | 0x53 | 0x80 => Ok(Descriptor::Numeric(self.parse_u64()?)),
+            0xa3 | 0xb3 => Ok(Descriptor::Symbol(self.parse_bytes()?)),
+            _ => Err(Error::InvalidData),
+        }
+    }
+
     fn parse_u64(&mut self) -> Result<u64> {
         Ok(match self.next()? {
             0x44 => 0,
@@ -403,16 +412,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         V: Visitor<'de>,
     {
         if self.peek()? == 0 {
-            self.assume(0)?;
-            match self.peek()? {
-                0x44 | 0x53 | 0x80 => {
-                    self.parse_u64()?;
-                }
-                0xa3 | 0xb3 => {
-                    self.parse_bytes()?;
-                }
-                _ => return Err(Error::InvalidData),
-            }
+            let _ = self.parse_descriptor()?;
         }
 
         let (size, _, constructor) = self.composite()?;
