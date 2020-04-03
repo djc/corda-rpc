@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 use std::str;
 
-use serde::de::{self, DeserializeSeed, EnumAccess, SeqAccess, VariantAccess, Visitor};
+use serde::de::{self, DeserializeSeed, EnumAccess, MapAccess, SeqAccess, VariantAccess, Visitor};
 
 use crate::Error;
 
@@ -116,7 +116,13 @@ impl<'de> Deserializer<'de> {
         Ok(match self.next()? {
             0x45 => (0, 0, None),
             0xc0 => (self.next()? as usize - 1, self.next()? as usize, None),
+            0xc1 => (self.next()? as usize - 1, self.next()? as usize, None),
             0xd0 => (
+                self.read_u32()? as usize - 4,
+                self.read_u32()? as usize,
+                None,
+            ),
+            0xd1 => (
                 self.read_u32()? as usize - 4,
                 self.read_u32()? as usize,
                 None,
@@ -395,11 +401,12 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         self.deserialize_seq(visitor)
     }
 
-    fn deserialize_map<V>(self, _visitor: V) -> Result<V::Value>
+    fn deserialize_map<V>(mut self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        unimplemented!()
+        let (_, len, _) = self.composite()?;
+        visitor.visit_map(Map::new(&mut self, len / 2))
     }
 
     fn deserialize_struct<V>(
@@ -536,6 +543,39 @@ impl<'de, 'a> VariantAccess<'de> for Enum<'a, 'de> {
         V: Visitor<'de>,
     {
         unimplemented!()
+    }
+}
+
+struct Map<'a, 'de: 'a> {
+    de: &'a mut Deserializer<'de>,
+    left: usize,
+}
+
+impl<'a, 'de> Map<'a, 'de> {
+    fn new(de: &'a mut Deserializer<'de>, left: usize) -> Self {
+        Self { de, left }
+    }
+}
+
+impl<'de, 'a> MapAccess<'de> for Map<'a, 'de> {
+    type Error = Error;
+
+    fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>>
+    where
+        K: DeserializeSeed<'de>,
+    {
+        if self.left < 1 {
+            return Ok(None);
+        }
+        self.left -= 1;
+        seed.deserialize(&mut *self.de).map(Some)
+    }
+
+    fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value>
+    where
+        V: DeserializeSeed<'de>,
+    {
+        seed.deserialize(&mut *self.de)
     }
 }
 
