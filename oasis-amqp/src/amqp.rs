@@ -10,7 +10,7 @@ use serde_bytes::{ByteBuf, Bytes};
 
 use crate::{de, Described};
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Frame<'a> {
     pub channel: u16,
     #[serde(borrow)]
@@ -33,20 +33,42 @@ impl<'a> Frame<'a> {
         };
 
         let (performative, buf) = de::deserialize(buf)?;
-        if !buf.is_empty() {
-            return Err(crate::Error::TrailingCharacters);
-        }
+        let message = if !buf.is_empty() {
+            let mut deserializer = de::Deserializer::from_bytes(buf);
+            let mut reader = deserializer.reader()?;
+            let header = reader.read(&mut deserializer, true)?;
+            let delivery_annotations = reader.read(&mut deserializer, true)?;
+            let message_annotations = reader.read(&mut deserializer, true)?;
+            let properties = reader.read(&mut deserializer, true)?;
+            let application_properties = reader.read(&mut deserializer, false)?;
+            // TODO: allow deserialization of messages that don't have a body
+            let body = Some(Body::deserialize(&mut deserializer)?);
+            reader.next(&mut deserializer)?;
+            let footer = reader.read(&mut deserializer, false)?;
+
+            Some(Message {
+                header,
+                delivery_annotations,
+                message_annotations,
+                properties,
+                application_properties,
+                body,
+                footer,
+            })
+        } else {
+            None
+        };
 
         Ok(Self {
             channel,
             extended_header,
             performative,
-            message: None,
+            message,
         })
     }
 }
 
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, Default, PartialEq, Serialize)]
 pub struct Message<'a> {
     pub header: Option<Header>,
     #[serde(borrow)]

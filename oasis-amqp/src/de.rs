@@ -3,7 +3,7 @@ use std::str;
 
 use serde::de::{self, DeserializeSeed, EnumAccess, MapAccess, SeqAccess, VariantAccess, Visitor};
 
-use crate::Error;
+use crate::{Described, Error};
 
 pub fn deserialize<'a, T: de::Deserialize<'a>>(bytes: &'a [u8]) -> Result<(T, &'a [u8])> {
     let mut deserializer = Deserializer::from_bytes(bytes);
@@ -141,6 +141,10 @@ impl<'de> Deserializer<'de> {
             ),
             _ => return Err(Error::InvalidData),
         })
+    }
+
+    pub fn reader(&mut self) -> Result<DescribedReader<'de>> {
+        DescribedReader::new(self.parse_descriptor()?)
     }
 }
 
@@ -491,6 +495,53 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     {
         self.deserialize_any(visitor)
     }
+}
+
+pub struct DescribedReader<'de> {
+    descriptor: Option<Descriptor<'de>>,
+}
+
+impl<'de> DescribedReader<'de> {
+    pub fn new(descriptor: Descriptor<'de>) -> Result<Self> {
+        Ok(Self {
+            descriptor: Some(descriptor),
+        })
+    }
+
+    pub fn next(&mut self, deserializer: &mut Deserializer<'de>) -> Result<()> {
+        if !deserializer.input.is_empty() {
+            self.descriptor = Some(deserializer.parse_descriptor()?);
+        }
+        Ok(())
+    }
+
+    pub fn read<T: Described + serde::de::Deserialize<'de>>(
+        &mut self,
+        deserializer: &mut Deserializer<'de>,
+        next: bool,
+    ) -> Result<Option<T>> {
+        use Descriptor::*;
+        let matched = match &self.descriptor {
+            Some(Numeric(v)) => T::CODE == Some(*v),
+            Some(Symbol(s)) => T::NAME == Some(s),
+            None => return Ok(None),
+        };
+
+        if !matched {
+            return Ok(None);
+        }
+
+        let t = T::deserialize(&mut *deserializer)?;
+        if next {
+            self.next(deserializer)?;
+        }
+        Ok(Some(t))
+    }
+}
+
+pub enum Descriptor<'a> {
+    Numeric(u64),
+    Symbol(&'a [u8]),
 }
 
 struct Access<'a, 'de: 'a> {
