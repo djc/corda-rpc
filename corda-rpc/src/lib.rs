@@ -1,4 +1,4 @@
-use oasis_amqp::{amqp, Described};
+use oasis_amqp::{amqp, ser, Described};
 use oasis_amqp_macros::amqp as amqp_derive;
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +15,14 @@ pub struct Envelope<'a, T> {
     pub obj: T,
     #[serde(borrow)]
     pub schema: Schema<'a>,
+}
+
+impl<'a, 'de: 'a, T> Envelope<'a, T> where T: Deserialize<'de> + Serialize {
+    pub fn encode(&self, buf: &mut Vec<u8>) -> Result<(), oasis_amqp::Error> {
+        buf.extend_from_slice(CORDA_MAGIC);
+        buf.push(SectionId::DataAndStop as u8);
+        ser::into_bytes(self, buf)
+    }
 }
 
 #[amqp_derive(descriptor(code = 0xc5620000_00000002))]

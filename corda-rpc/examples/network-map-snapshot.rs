@@ -2,15 +2,13 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::time::SystemTime;
 
-use oasis_amqp::{amqp, ser, Client};
+use oasis_amqp::{amqp, Client};
 use rand::{self, Rng};
 use serde_bytes::{ByteBuf, Bytes};
 use tokio;
 use uuid::Uuid;
 
-use corda_rpc::{
-    Descriptor, Envelope, ObjectList, RestrictedType, Schema, SectionId, TypeNotation, CORDA_MAGIC,
-};
+use corda_rpc::{Descriptor, Envelope, ObjectList, RestrictedType, Schema, TypeNotation};
 
 #[tokio::main]
 async fn main() {
@@ -109,12 +107,10 @@ async fn main() {
     properties.insert("rpc-id-timestamp", amqp::Any::I64(timestamp));
     properties.insert("rpc-session-id", amqp::Any::Str(rpc_session_id.into()));
     properties.insert("rpc-session-id-timestamp", amqp::Any::I64(timestamp));
-    properties.insert("deduplication-sequence-number", amqp::Any::I64(0));
+    properties.insert("deduplication-sequence-number", amqp::Any::I64(1));
 
     let mut body = vec![];
-    body.extend_from_slice(CORDA_MAGIC);
-    body.push(SectionId::DataAndStop as u8);
-    let envelope = Envelope {
+    Envelope {
         obj: ObjectList(amqp::List::default()),
         schema: Schema {
             types: vec![TypeNotation::RestrictedType(RestrictedType {
@@ -130,8 +126,9 @@ async fn main() {
             })]
             .into(),
         },
-    };
-    ser::into_bytes(&envelope, &mut body).unwrap();
+    }
+    .encode(&mut body)
+    .unwrap();
 
     client
         .transfer(
