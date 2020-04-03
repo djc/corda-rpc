@@ -517,7 +517,11 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
         D: serde::Deserializer<'de>,
     {
         enum AnyType {
+            None,
             I8,
+            I32,
+            I64,
+            Str,
         }
 
         struct FieldVisitor;
@@ -533,7 +537,11 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
                 E: serde::de::Error,
             {
                 match value {
+                    0x40 => Ok(AnyType::None),
                     0x51 => Ok(AnyType::I8),
+                    0x54 => Ok(AnyType::I32),
+                    0x55 | 0x81 => Ok(AnyType::I64),
+                    0xa1 => Ok(AnyType::Str),
                     _ => Err(serde::de::Error::invalid_value(
                         serde::de::Unexpected::Unsigned(value),
                         &"constructor code",
@@ -574,20 +582,39 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
                 };
 
                 match val {
+                    (AnyType::None, variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<()>(variant),
+                        |_| Any::None,
+                    ),
                     (AnyType::I8, variant) => Result::map(
                         serde::de::VariantAccess::newtype_variant::<i8>(variant),
                         Any::I8,
+                    ),
+                    (AnyType::I32, variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<i32>(variant),
+                        Any::I32,
+                    ),
+                    (AnyType::I64, variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<i64>(variant),
+                        Any::I64,
+                    ),
+                    (AnyType::Str, variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<&str>(variant),
+                        |s| Any::Str(s.into()),
                     ),
                 }
             }
         }
 
-        const VARIANTS: &[&'static str] = &[
-            "I8",
-        ];
-        serde::Deserializer::deserialize_enum(deserializer, "Any", VARIANTS, Visitor {
-            marker: PhantomData::default(),
-            lifetime: PhantomData::default(),
-        })
+        const VARIANTS: &[&'static str] = &["None", "I8", "I32", "I64", "Str"];
+        serde::Deserializer::deserialize_enum(
+            deserializer,
+            "Any",
+            VARIANTS,
+            Visitor {
+                marker: PhantomData::default(),
+                lifetime: PhantomData::default(),
+            },
+        )
     }
 }
