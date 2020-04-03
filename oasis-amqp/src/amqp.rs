@@ -74,7 +74,7 @@ pub struct DeliveryAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str
 
 #[amqp(descriptor("amqp:message-annotations:map", 0x00000000_00000072))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct MessageAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, &'a str>);
+pub struct MessageAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'a>>);
 
 #[amqp(descriptor("amqp:properties:list", 0x00000000_00000073))]
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
