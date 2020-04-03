@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::convert::TryInto;
 use std::fmt;
+use std::marker::PhantomData;
 
 use oasis_amqp_macros::amqp;
 use serde::{self, ser::SerializeTuple, Deserialize, Serialize};
@@ -469,7 +470,7 @@ where
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum Any<'a> {
     None,
     Bool(bool),
@@ -486,4 +487,85 @@ pub enum Any<'a> {
     Bytes(&'a [u8]),
     Symbol(Cow<'a, str>),
     Str(Cow<'a, str>),
+}
+
+impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        enum AnyType {
+            I8,
+        }
+
+        struct FieldVisitor;
+
+        impl<'de: 'a, 'a> serde::de::Visitor<'de> for FieldVisitor {
+            type Value = AnyType;
+            fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                fmt::Formatter::write_str(fmt, "variant identifier")
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+            where
+                E: serde::de::Error,
+            {
+                match value {
+                    0x51 => Ok(AnyType::I8),
+                    _ => Err(serde::de::Error::invalid_value(
+                        serde::de::Unexpected::Unsigned(value),
+                        &"constructor code",
+                    )),
+                }
+            }
+        }
+
+        impl<'de> serde::Deserialize<'de> for AnyType {
+            #[inline]
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                serde::Deserializer::deserialize_identifier(deserializer, FieldVisitor)
+            }
+        }
+
+        struct Visitor<'de, 'a> {
+            marker: PhantomData<Any<'a>>,
+            lifetime: PhantomData<&'de ()>,
+        }
+
+        impl<'de: 'a, 'a> serde::de::Visitor<'de> for Visitor<'de, 'a> {
+            type Value = Any<'a>;
+
+            fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                fmt::Formatter::write_str(fmt, "enum Any")
+            }
+
+            fn visit_enum<A>(self, data: A) -> serde::export::Result<Self::Value, A::Error>
+            where
+                A: serde::de::EnumAccess<'de>,
+            {
+                let val = match serde::de::EnumAccess::variant(data) {
+                    Ok(val) => val,
+                    Err(err) => return Err(err),
+                };
+
+                match val {
+                    (AnyType::I8, variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<i8>(variant),
+                        Any::I8,
+                    ),
+                }
+            }
+        }
+
+        const VARIANTS: &[&'static str] = &[
+            "I8",
+        ];
+        serde::Deserializer::deserialize_enum(deserializer, "Any", VARIANTS, Visitor {
+            marker: PhantomData::default(),
+            lifetime: PhantomData::default(),
+        })
+    }
 }

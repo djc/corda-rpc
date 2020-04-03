@@ -14,6 +14,7 @@ pub fn deserialize<'a, T: de::Deserialize<'a>>(bytes: &'a [u8]) -> Result<(T, &'
 pub struct Deserializer<'de> {
     input: &'de [u8],
     constructor: Option<usize>,
+    any: bool,
 }
 
 impl<'de> Deserializer<'de> {
@@ -21,6 +22,7 @@ impl<'de> Deserializer<'de> {
         Deserializer {
             input,
             constructor: None,
+            any: false,
         }
     }
 
@@ -375,7 +377,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         let (input, rest) = self.input.split_at(size);
         self.input = rest;
 
-        let mut nested = Deserializer { input, constructor };
+        let mut nested = Deserializer {
+            input,
+            constructor,
+            any: false,
+        };
         visitor.visit_seq(Access {
             de: &mut nested,
             len,
@@ -426,7 +432,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         let (input, rest) = self.input.split_at(size);
         self.input = rest;
 
-        let mut nested = Deserializer { input, constructor };
+        let mut nested = Deserializer {
+            input,
+            constructor,
+            any: false,
+        };
         visitor.visit_seq(Access {
             de: &mut nested,
             len: fields.len(),
@@ -435,7 +445,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
 
     fn deserialize_enum<V>(
         self,
-        _name: &'static str,
+        name: &'static str,
         _variants: &'static [&'static str],
         visitor: V,
     ) -> Result<V::Value>
@@ -446,7 +456,10 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
             self.assume(0)?;
             visitor.visit_enum(Enum { de: self })
         } else {
-            visitor.visit_enum(Enum { de: self })
+            self.any = name == "Any";
+            let res = visitor.visit_enum(Enum { de: self });
+            self.any = false;
+            res
         }
     }
 
@@ -454,17 +467,21 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
-        match self.peek_constructor()? {
-            0x56 | 0x41 | 0x42 => visitor.visit_u64(if self.parse_bool()? { 1 } else { 0 }),
-            0x50 => {
-                self.assume(0x50)?;
-                let id = self.next()?;
-                visitor.visit_u64(id as u64)
+        if !self.any {
+            match self.peek_constructor()? {
+                0x56 | 0x41 | 0x42 => visitor.visit_u64(if self.parse_bool()? { 1 } else { 0 }),
+                0x50 => {
+                    self.assume(0x50)?;
+                    let id = self.next()?;
+                    visitor.visit_u64(id as u64)
+                }
+                0x43 | 0x52 | 0x70 => visitor.visit_u64(self.read_u32()? as u64),
+                0x44 | 0x53 | 0x80 => self.deserialize_u64(visitor),
+                0xa3 | 0xb3 => self.deserialize_bytes(visitor),
+                _ => Err(Error::InvalidData),
             }
-            0x43 | 0x52 | 0x70 => visitor.visit_u64(self.read_u32()? as u64),
-            0x44 | 0x53 | 0x80 => self.deserialize_u64(visitor),
-            0xa3 | 0xb3 => self.deserialize_bytes(visitor),
-            _ => Err(Error::InvalidData),
+        } else {
+            visitor.visit_u64(self.peek_constructor()? as u64)
         }
     }
 
