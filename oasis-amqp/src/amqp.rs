@@ -76,7 +76,7 @@ pub struct Message<'a> {
     pub message_annotations: Option<MessageAnnotations<'a>>,
     pub properties: Option<Properties<'a>>,
     pub application_properties: Option<ApplicationProperties<'a>>,
-    pub body: Option<Body>,
+    pub body: Option<Body<'a>>,
     pub footer: Option<Footer<'a>>,
 }
 
@@ -122,10 +122,10 @@ pub struct ApplicationProperties<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'
 
 #[amqp]
 #[derive(Debug, PartialEq, Serialize)]
-pub enum Body {
+pub enum Body<'a> {
     Data(Data),
     Sequence(Sequence),
-    Value(Value),
+    Value(Value<'a>),
 }
 
 #[amqp(descriptor("amqp:data:binary", 0x00000000_00000075))]
@@ -137,8 +137,8 @@ pub struct Data(pub ByteBuf);
 pub struct Sequence {}
 
 #[amqp(descriptor("amqp:value:*", 0x00000000_00000077))]
-#[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct Value {}
+#[derive(Debug, Deserialize, PartialEq, Serialize)]
+pub struct Value<'a>(#[serde(borrow)] Any<'a>);
 
 #[amqp(descriptor("amqp:footer:map", 0x00000000_00000078))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
