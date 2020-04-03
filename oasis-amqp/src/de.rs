@@ -165,7 +165,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
             0x51 => self.deserialize_i8(visitor),
             0x61 => self.deserialize_i16(visitor),
             0x54 | 0x71 => self.deserialize_i32(visitor),
-            0x55 | 0x81 => self.deserialize_i64(visitor),
+            0x55 | 0x81 | 0x83 => self.deserialize_i64(visitor),
             0x72 => self.deserialize_f32(visitor),
             0x82 => self.deserialize_f64(visitor),
             0x45 | 0xc0 | 0xd0 => self.deserialize_seq(visitor),
@@ -263,7 +263,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     {
         match self.next()? {
             0x55 => visitor.visit_i64(self.next()? as i64),
-            0x81 => {
+            0x81 | 0x83 => {
                 let (val, rest) = self.input.split_at(8);
                 self.input = rest;
                 let val = val.try_into()?;
