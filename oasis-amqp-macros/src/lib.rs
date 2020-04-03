@@ -89,7 +89,7 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
 
         let ty = match &fields.unnamed.first().unwrap().ty {
             syn::Type::Path(p) => p,
-            _ => panic!("only path types allowed"),
+            p => panic!("only path types allowed: {:?}", p),
         };
 
         let variant = format_ident!("F{}", i);
