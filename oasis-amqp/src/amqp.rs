@@ -606,7 +606,7 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
             }
         }
 
-        const VARIANTS: &[&'static str] = &["None", "I8", "I32", "I64", "Str"];
+        const VARIANTS: &[&str] = &["None", "I8", "I32", "I64", "Str"];
         serde::Deserializer::deserialize_enum(
             deserializer,
             "Any",
