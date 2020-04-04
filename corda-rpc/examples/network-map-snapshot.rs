@@ -77,9 +77,9 @@ async fn main() {
     client
         .flow(amqp::Flow {
             next_incoming_id: Some(1),
-            incoming_window: 2147483647,
+            incoming_window: 2_147_483_647,
             next_outgoing_id: 1,
-            outgoing_window: 2147483647,
+            outgoing_window: 2_147_483_647,
             handle: Some(1),
             delivery_count: Some(0),
             link_credit: Some(1000),
