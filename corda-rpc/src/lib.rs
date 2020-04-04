@@ -17,7 +17,10 @@ pub struct Envelope<'a, T> {
     pub schema: Schema<'a>,
 }
 
-impl<'a, 'de: 'a, T> Envelope<'a, T> where T: Deserialize<'de> + Serialize {
+impl<'a, 'de: 'a, T> Envelope<'a, T>
+where
+    T: Deserialize<'de> + Serialize,
+{
     pub fn encode(&self, buf: &mut Vec<u8>) -> Result<(), oasis_amqp::Error> {
         buf.extend_from_slice(CORDA_MAGIC);
         buf.push(SectionId::DataAndStop as u8);
