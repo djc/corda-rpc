@@ -458,6 +458,10 @@ impl<'de> serde::de::Visitor<'de> for SymbolVisitor {
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         formatter.write_str("a symbol")
     }
+
+    fn visit_borrowed_str<E>(self, v: &'de str) -> Result<Self::Value, E> {
+        Ok(Symbol(v))
+    }
 }
 
 #[derive(Debug, Deserialize, PartialEq)]
