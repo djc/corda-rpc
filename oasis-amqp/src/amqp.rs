@@ -433,7 +433,7 @@ pub enum ReceiverSettleMode {
 
 #[derive(Debug, PartialEq, Serialize)]
 #[serde(rename = "amqp:symbol")]
-pub struct Symbol<'a>(&'a str);
+pub struct Symbol<'a>(pub &'a str);
 
 impl<'a> From<&'a str> for Symbol<'a> {
     fn from(s: &'a str) -> Self {
