@@ -464,9 +464,18 @@ impl<'de> serde::de::Visitor<'de> for SymbolVisitor {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq)]
+#[derive(Deserialize, PartialEq)]
 #[serde(transparent)]
 pub struct List<T>(pub Vec<T>);
+
+impl<T> fmt::Debug for List<T>
+where
+    T: fmt::Debug,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl<T> Default for List<T> {
     fn default() -> Self {
