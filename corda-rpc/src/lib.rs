@@ -116,8 +116,8 @@ where
             T: Deserialize<'de>,
             E: Deserialize<'de>,
         {
-            marker: serde::export::PhantomData<Try<T, E>>,
-            lifetime: serde::export::PhantomData<&'de ()>,
+            marker: PhantomData<Try<T, E>>,
+            lifetime: PhantomData<&'de ()>,
         }
         impl<'de, T, E> serde::de::Visitor<'de> for Visitor<'de, T, E>
         where
@@ -133,9 +133,9 @@ where
                 __A: serde::de::EnumAccess<'de>,
             {
                 match match serde::de::EnumAccess::variant(__data) {
-                    serde::export::Ok(__val) => __val,
-                    serde::export::Err(__err) => {
-                        return serde::export::Err(__err);
+                    Ok(__val) => __val,
+                    Err(__err) => {
+                        return Err(__err);
                     }
                 } {
                     (Field::<T, E>::F0(_), __variant) => Result::map(
