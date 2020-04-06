@@ -378,6 +378,12 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     where
         V: Visitor<'de>,
     {
+        // Ignore potential descriptors, which are likely here because
+        // Corda confuses (heterogeneous) lists and (homogeneous) arrays.
+        if self.peek()? == 0 {
+            let _ = self.parse_descriptor()?;
+        }
+
         let (size, len, constructor) = self.composite()?;
         let (input, rest) = self.input.split_at(size);
         self.input = rest;
