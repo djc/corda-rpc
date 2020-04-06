@@ -1,5 +1,5 @@
 use std::convert::TryInto;
-use std::str;
+use std::{fmt, str};
 
 use serde::de::{self, DeserializeSeed, EnumAccess, MapAccess, SeqAccess, VariantAccess, Visitor};
 
@@ -56,11 +56,11 @@ impl<'de> Deserializer<'de> {
             0x56 => match self.next()? {
                 0x01 => true,
                 0x00 => false,
-                _ => return Err(Error::InvalidData),
+                v => return Err(InvalidFormatCode::new("bool", v).into()),
             },
             0x41 => true,
             0x42 => false,
-            _ => return Err(Error::InvalidData),
+            t => return Err(InvalidFormatCode::new("bool", t as u8).into()),
         })
     }
 
@@ -69,7 +69,7 @@ impl<'de> Deserializer<'de> {
         match self.peek()? {
             0x44 | 0x53 | 0x80 => Ok(Descriptor::Numeric(self.parse_u64()?)),
             0xa3 | 0xb3 => Ok(Descriptor::Symbol(self.parse_bytes()?)),
-            _ => Err(Error::InvalidData),
+            f => Err(InvalidFormatCode::new("descriptor", f).into()),
         }
     }
 
@@ -83,7 +83,7 @@ impl<'de> Deserializer<'de> {
                 let val = val.try_into()?;
                 u64::from_be_bytes(val)
             }
-            _ => return Err(Error::InvalidData),
+            t => return Err(InvalidFormatCode::new("u64", t).into()),
         })
     }
 
@@ -91,7 +91,7 @@ impl<'de> Deserializer<'de> {
         let len = match self.next_constructor()? {
             0xa0 | 0xa3 => self.next()? as usize,
             0xb0 | 0xb3 => self.read_u32()? as usize,
-            _ => return Err(Error::InvalidData),
+            t => return Err(InvalidFormatCode::new("bytes", t as u8).into()),
         };
 
         let (val, rest) = self.input.split_at(len);
@@ -139,7 +139,7 @@ impl<'de> Deserializer<'de> {
                 self.read_u32()? as usize,
                 Some(self.read_u32()? as usize),
             ),
-            _ => return Err(Error::InvalidData),
+            t => return Err(InvalidFormatCode::new("composite type", t).into()),
         })
     }
 
@@ -173,7 +173,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
             0x73 => self.deserialize_char(visitor),
             0xa1 | 0xb1 => self.deserialize_str(visitor),
             0xa0 | 0xa3 | 0xb0 | 0xb3 => self.deserialize_bytes(visitor),
-            _ => Err(Error::Syntax),
+            t => Err(InvalidFormatCode::new("any", t as u8).into()),
         }
     }
 
@@ -211,7 +211,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
             0x43 => visitor.visit_u32(0),
             0x52 => visitor.visit_u32(self.next()? as u32),
             0x70 => visitor.visit_u32(self.read_u32()?),
-            _ => Err(Error::InvalidData),
+            t => Err(InvalidFormatCode::new("u32", t).into()),
         }
     }
 
@@ -253,7 +253,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 let val = val.try_into()?;
                 visitor.visit_i32(i32::from_be_bytes(val))
             }
-            _ => Err(Error::InvalidData),
+            t => Err(InvalidFormatCode::new("i32", t).into()),
         }
     }
 
@@ -269,7 +269,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 let val = val.try_into()?;
                 visitor.visit_i64(i64::from_be_bytes(val))
             }
-            _ => Err(Error::InvalidData),
+            t => Err(InvalidFormatCode::new("i64", t).into()),
         }
     }
 
@@ -306,7 +306,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         let len = match self.next_constructor()? {
             0xa1 | 0xa3 => self.next()? as usize,
             0xb1 | 0xb3 => self.read_u32()? as usize,
-            _ => return Err(Error::InvalidData),
+            t => return Err(InvalidFormatCode::new("str", t as u8).into()),
         };
 
         let (val, rest) = self.input.split_at(len);
@@ -483,7 +483,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 0x43 | 0x52 | 0x70 => visitor.visit_u64(self.read_u32()? as u64),
                 0x44 | 0x53 | 0x80 => self.deserialize_u64(visitor),
                 0xa3 | 0xb3 => self.deserialize_bytes(visitor),
-                _ => Err(Error::InvalidData),
+                t => Err(InvalidFormatCode::new("variant identifier", t as u8).into()),
             }
         } else {
             visitor.visit_u64(self.peek_constructor()? as u64)
@@ -645,6 +645,30 @@ impl<'de, 'a> MapAccess<'de> for Map<'a, 'de> {
         V: DeserializeSeed<'de>,
     {
         seed.deserialize(&mut *self.de)
+    }
+}
+
+#[derive(Debug)]
+pub struct InvalidFormatCode {
+    expected: &'static str,
+    code: u8,
+}
+
+impl InvalidFormatCode {
+    fn new(expected: &'static str, code: u8) -> Self {
+        Self { expected, code }
+    }
+}
+
+impl std::error::Error for InvalidFormatCode {}
+
+impl fmt::Display for InvalidFormatCode {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            formatter,
+            "expected {}, found format code {:?}",
+            self.expected, self.code
+        )
     }
 }
 

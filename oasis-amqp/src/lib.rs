@@ -21,6 +21,8 @@ pub trait Described {
 pub enum Error {
     #[error(display = "invalid data")]
     InvalidData,
+    #[error(display = "invalid format code: {}", _0)]
+    InvalidFormatCode(#[source] de::InvalidFormatCode),
     #[error(display = "syntax")]
     Syntax,
     #[error(display = "unexpected end")]
