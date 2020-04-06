@@ -107,7 +107,7 @@ async fn main() {
     properties.insert("rpc-id-timestamp", amqp::Any::I64(timestamp));
     properties.insert("rpc-session-id", amqp::Any::Str(rpc_session_id.into()));
     properties.insert("rpc-session-id-timestamp", amqp::Any::I64(timestamp));
-    properties.insert("deduplication-sequence-number", amqp::Any::I64(1));
+    properties.insert("deduplication-sequence-number", amqp::Any::I64(0));
 
     let mut body = vec![];
     Envelope {
