@@ -622,7 +622,7 @@ fn decode() {
                         },
                     }]),
                     platform_version: 6,
-                    serial: 1580734505008,
+                    serial: 1_580_734_505_008,
                 },
                 NodeInfo {
                     addresses: amqp::List(vec![NetworkHostAndPort {
@@ -774,7 +774,7 @@ fn decode() {
                         },
                     }]),
                     platform_version: 4,
-                    serial: 1572437668928,
+                    serial: 1_572_437_668_928,
                 },
                 NodeInfo {
                     addresses: amqp::List(vec![NetworkHostAndPort {
@@ -928,7 +928,7 @@ fn decode() {
                         },
                     }]),
                     platform_version: 4,
-                    serial: 1572437667228,
+                    serial: 1_572_437_667_228,
                 },
             ]),
         }),

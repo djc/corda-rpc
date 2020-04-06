@@ -153,7 +153,7 @@ where
             }
         }
 
-        const VARIANTS: &[&'static str] = &["Success", "Error"];
+        const VARIANTS: &[&str] = &["Success", "Error"];
         serde::Deserializer::deserialize_enum(
             deserializer,
             "Try",
