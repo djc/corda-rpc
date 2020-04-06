@@ -1,8 +1,180 @@
-use oasis_amqp::{amqp, ser, Described};
+use std::fmt;
+use std::marker::PhantomData;
+
+use oasis_amqp::{amqp, de, ser, Described, Error};
 use oasis_amqp_macros::amqp as amqp_derive;
 use serde::{Deserialize, Serialize};
+use serde_bytes;
 
+#[amqp_derive(descriptor(name = "net.corda:ncUcZzvT9YGn0ItdoWW3QQ=="))]
 #[derive(Debug, Deserialize, Serialize)]
+pub struct NodeInfo<'a> {
+    #[serde(borrow)]
+    addresses: amqp::List<NetworkHostAndPort<'a>>,
+    legal_identities_and_certs: amqp::List<PartyAndCertificate<'a>>,
+    platform_version: i32,
+    serial: i64,
+}
+
+#[amqp_derive(descriptor(name = "net.corda:IA+5d7+UvO6yts6wDzr86Q=="))]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct NetworkHostAndPort<'a> {
+    host: &'a str,
+    port: i32,
+}
+
+#[amqp_derive(descriptor(name = "net.corda:GaPpq/rL9KtfTOQDN9ZCbA=="))]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct PartyAndCertificate<'a> {
+    #[serde(borrow)]
+    cert_path: CertPath<'a>,
+}
+
+#[amqp_derive(descriptor(name = "net.corda:e+qsW/cJ4ajGpb8YkJWB1A=="))]
+#[derive(Deserialize, Serialize)]
+pub struct CertPath<'a> {
+    #[serde(with = "serde_bytes")]
+    data: &'a [u8],
+    ty: &'a str,
+}
+
+impl<'a> fmt::Debug for CertPath<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("CertPath")
+            .field("data", &"[certificate data elided]")
+            .field("ty", &self.ty)
+            .finish()
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub enum Try<T, E> {
+    Success(Success<T>),
+    Failure(Failure<E>),
+}
+
+impl<'de, T, E> serde::Deserialize<'de> for Try<T, E>
+where
+    T: Deserialize<'de>,
+    E: Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        enum Field<T, E> {
+            F0(PhantomData<T>),
+            F1(PhantomData<E>),
+        }
+
+        struct FieldVisitor<T, E> {
+            t1: PhantomData<T>,
+            t2: PhantomData<E>,
+        }
+
+        impl<T, E> Default for FieldVisitor<T, E> {
+            fn default() -> Self {
+                Self {
+                    t1: PhantomData::default(),
+                    t2: PhantomData::default(),
+                }
+            }
+        }
+
+        impl<'de, T, E> serde::de::Visitor<'de> for FieldVisitor<T, E> {
+            type Value = Field<T, E>;
+            fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                fmt::Formatter::write_str(fmt, "variant identifier")
+            }
+            fn visit_bytes<__E>(self, value: &[u8]) -> Result<Self::Value, __E>
+            where
+                __E: serde::de::Error,
+            {
+                match Some(value) {
+                    Success::<T>::NAME => Ok(Field::F0(PhantomData::default())),
+                    Failure::<E>::NAME => Ok(Field::F1(PhantomData::default())),
+                    _ => {
+                        let value = &serde::export::from_utf8_lossy(value);
+                        Err(serde::de::Error::unknown_variant(value, VARIANTS))
+                    }
+                }
+            }
+        }
+
+        impl<'de, T, E> serde::Deserialize<'de> for Field<T, E> {
+            #[inline]
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                serde::Deserializer::deserialize_identifier(deserializer, FieldVisitor::default())
+            }
+        }
+
+        struct Visitor<'de, T, E>
+        where
+            T: Deserialize<'de>,
+            E: Deserialize<'de>,
+        {
+            marker: serde::export::PhantomData<Try<T, E>>,
+            lifetime: serde::export::PhantomData<&'de ()>,
+        }
+        impl<'de, T, E> serde::de::Visitor<'de> for Visitor<'de, T, E>
+        where
+            T: Deserialize<'de>,
+            E: Deserialize<'de>,
+        {
+            type Value = Try<T, E>;
+            fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                fmt::Formatter::write_str(fmt, "enum #name_str")
+            }
+            fn visit_enum<__A>(self, __data: __A) -> serde::export::Result<Self::Value, __A::Error>
+            where
+                __A: serde::de::EnumAccess<'de>,
+            {
+                match match serde::de::EnumAccess::variant(__data) {
+                    serde::export::Ok(__val) => __val,
+                    serde::export::Err(__err) => {
+                        return serde::export::Err(__err);
+                    }
+                } {
+                    (Field::<T, E>::F0(_), __variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<Success<T>>(__variant),
+                        Try::Success,
+                    ),
+                    (Field::<T, E>::F1(_), __variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<Failure<E>>(__variant),
+                        Try::Failure,
+                    ),
+                }
+            }
+        }
+
+        const VARIANTS: &[&'static str] = &["Success", "Error"];
+        serde::Deserializer::deserialize_enum(
+            deserializer,
+            "Try",
+            VARIANTS,
+            Visitor {
+                marker: PhantomData::<Try<T, E>>,
+                lifetime: PhantomData,
+            },
+        )
+    }
+}
+
+#[amqp_derive(descriptor(name = "net.corda:e+qsW/cJ4ajGpb8YkJWB1A=="))]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Success<T> {
+    value: T,
+}
+
+#[amqp_derive(descriptor(name = "net.corda:????????????????????????"))]
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Failure<T> {
+    value: T,
+}
+
 pub enum SectionId {
     DataAndStop,
     AltDataAndStop,
@@ -18,11 +190,33 @@ pub struct Envelope<'a, T> {
     pub transforms_schema: Option<TransformsSchema>,
 }
 
-impl<'a, 'de: 'a, T> Envelope<'a, T>
-where
-    T: Deserialize<'de> + Serialize,
-{
-    pub fn encode(&self, buf: &mut Vec<u8>) -> Result<(), oasis_amqp::Error> {
+impl<'a, T> Envelope<'a, T> {
+    pub fn decode<'b>(mut buf: &'b [u8]) -> Result<Envelope<'b, T>, Error>
+    where
+        T: Deserialize<'b>,
+    {
+        if buf.len() < CORDA_MAGIC.len() || &buf[..7] != CORDA_MAGIC {
+            return Err(Error::InvalidData);
+        }
+        buf = &buf[7..];
+
+        if buf.len() < 1 || buf[0] != (SectionId::DataAndStop as u8) {
+            return Err(Error::InvalidData);
+        }
+        buf = &buf[1..];
+
+        let (this, rest) = de::deserialize::<Envelope<T>>(buf)?;
+        if !rest.is_empty() {
+            return Err(Error::TrailingCharacters);
+        }
+
+        Ok(this)
+    }
+
+    pub fn encode(&self, buf: &mut Vec<u8>) -> Result<(), oasis_amqp::Error>
+    where
+        T: Serialize,
+    {
         buf.extend_from_slice(CORDA_MAGIC);
         buf.push(SectionId::DataAndStop as u8);
         ser::into_bytes(self, buf)

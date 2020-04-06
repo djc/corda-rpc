@@ -2,13 +2,15 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::time::SystemTime;
 
-use oasis_amqp::{amqp, Client};
+use oasis_amqp::{amqp, proto::Frame, Client};
 use rand::{self, Rng};
 use serde_bytes::{ByteBuf, Bytes};
 use tokio;
 use uuid::Uuid;
 
-use corda_rpc::{Descriptor, Envelope, ObjectList, RestrictedType, Schema, TypeNotation};
+use corda_rpc::{
+    Descriptor, Envelope, NodeInfo, ObjectList, RestrictedType, Schema, Try, TypeNotation,
+};
 
 #[tokio::main]
 async fn main() {
@@ -155,7 +157,16 @@ async fn main() {
         .await
         .unwrap();
 
-    println!("waiting for response...");
-    let next = client.next().await.unwrap();
-    println!("read: {:#?}\n", next);
+    let message = match client.next().await.unwrap().unwrap().frame {
+        Frame::Amqp(frame) => frame.message,
+        _ => unreachable!(),
+    };
+
+    let body = match message.unwrap().body {
+        Some(amqp::Body::Data(data)) => data,
+        _ => unreachable!(),
+    };
+
+    let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(&body.0).unwrap();
+    println!("{:#?}", rsp.obj);
 }
