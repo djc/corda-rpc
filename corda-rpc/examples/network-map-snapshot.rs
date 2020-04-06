@@ -126,6 +126,7 @@ async fn main() {
             })]
             .into(),
         },
+        transforms_schema: None,
     }
     .encode(&mut body)
     .unwrap();
