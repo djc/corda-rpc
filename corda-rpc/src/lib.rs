@@ -203,7 +203,7 @@ impl<'a, T> Envelope<'a, T> {
         }
         buf = &buf[7..];
 
-        if buf.len() < 1 || buf[0] != (SectionId::DataAndStop as u8) {
+        if buf.is_empty() || buf[0] != (SectionId::DataAndStop as u8) {
             return Err(Error::InvalidData);
         }
         buf = &buf[1..];
