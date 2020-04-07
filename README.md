@@ -16,11 +16,8 @@ The provided functionality is separated into three crates, as explained below.
 The **current state of the project can be described as pre-alpha**. So far I have worked to get a simple
 RPC call to the Corda node to work, and everything provided is only complete insofar as needed for
 that purpose. The example code in [network-map-snapshot](corda-rpc/examples/network-map-snapshot.rs)
-will trigger an RPC call on the Corda node as desired, but the return path for the RPC result is
-currently non-functional. Solving this is my first priority within this project, but is currently
-on hold due to other priorities within the ValueX project. So far it seems like some
-[changes](https://github.com/djc/corda/commit/e6b6f53a4689b32ea846e6121e0a2470f0f8c732) to Corda are
-necessary, but not sufficient.
+will trigger an RPC call on the Corda node as desired and return the proper response. However, this
+only works against a Corda node which has [some changes](https://github.com/corda/corda/compare/release/os/4.5...djc:amqp-rpc) applied to it.
 
 I am happy to answer questions about the code and it's current state and discuss a future roadmap,
 and I intend to provide (passive) maintenance (like PR code reviews) of this code going forward.
