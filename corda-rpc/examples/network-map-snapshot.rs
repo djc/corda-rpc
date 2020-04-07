@@ -150,7 +150,7 @@ async fn main() {
                     ..Default::default()
                 }),
                 application_properties: Some(amqp::ApplicationProperties(properties)),
-                body: Some(amqp::Body::Data(amqp::Data(ByteBuf::from(body)))),
+                body: Some(amqp::Body::Data(amqp::Data(&body))),
                 ..Default::default()
             },
         )
@@ -163,10 +163,11 @@ async fn main() {
     };
 
     let body = match message.unwrap().body {
-        Some(amqp::Body::Data(data)) => data,
+        Some(amqp::Body::Data(amqp::Data(data))) => data,
+        Some(amqp::Body::Value(amqp::Value(amqp::Any::Bytes(data)))) => data,
         _ => unreachable!(),
     };
 
-    let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(&body.0).unwrap();
+    let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(&body).unwrap();
     println!("{:#?}", rsp.obj);
 }

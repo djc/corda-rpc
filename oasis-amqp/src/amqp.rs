@@ -123,14 +123,14 @@ pub struct ApplicationProperties<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'
 #[amqp]
 #[derive(Debug, PartialEq, Serialize)]
 pub enum Body<'a> {
-    Data(Data),
+    Data(Data<'a>),
     Sequence(Sequence),
     Value(Value<'a>),
 }
 
 #[amqp(descriptor("amqp:data:binary", 0x00000000_00000075))]
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
-pub struct Data(pub ByteBuf);
+pub struct Data<'a>(#[serde(with = "serde_bytes")] pub &'a [u8]);
 
 #[amqp(descriptor("amqp:amqp-sequence:list", 0x00000000_00000076))]
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -138,7 +138,7 @@ pub struct Sequence {}
 
 #[amqp(descriptor("amqp:value:*", 0x00000000_00000077))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct Value<'a>(#[serde(borrow)] Any<'a>);
+pub struct Value<'a>(#[serde(borrow)] pub Any<'a>);
 
 #[amqp(descriptor("amqp:footer:map", 0x00000000_00000078))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -519,7 +519,7 @@ pub enum Any<'a> {
     I64(i64),
     F32(f32),
     F64(f64),
-    Bytes(&'a [u8]),
+    Bytes(#[serde(with = "serde_bytes")] &'a [u8]),
     Symbol(Cow<'a, str>),
     Str(Cow<'a, str>),
 }
@@ -534,6 +534,7 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
             I8,
             I32,
             I64,
+            Bytes,
             Str,
         }
 
@@ -555,6 +556,7 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
                     0x54 => Ok(AnyType::I32),
                     0x55 | 0x81 => Ok(AnyType::I64),
                     0xa1 => Ok(AnyType::Str),
+                    0xb0 => Ok(AnyType::Bytes),
                     _ => Err(serde::de::Error::invalid_value(
                         serde::de::Unexpected::Unsigned(value),
                         &"constructor code",
@@ -610,6 +612,10 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
                     (AnyType::I64, variant) => Result::map(
                         serde::de::VariantAccess::newtype_variant::<i64>(variant),
                         Any::I64,
+                    ),
+                    (AnyType::Bytes, variant) => Result::map(
+                        serde::de::VariantAccess::newtype_variant::<&[u8]>(variant),
+                        |s| Any::Bytes(s.into()),
                     ),
                     (AnyType::Str, variant) => Result::map(
                         serde::de::VariantAccess::newtype_variant::<&str>(variant),
