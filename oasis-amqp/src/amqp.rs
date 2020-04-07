@@ -615,7 +615,7 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
                     ),
                     (AnyType::Bytes, variant) => Result::map(
                         serde::de::VariantAccess::newtype_variant::<&[u8]>(variant),
-                        |s| Any::Bytes(s.into()),
+                        Any::Bytes,
                     ),
                     (AnyType::Str, variant) => Result::map(
                         serde::de::VariantAccess::newtype_variant::<&str>(variant),
