@@ -181,7 +181,13 @@ impl Encoder<&Frame<'_>> for Codec {
 pub struct BytesFrame {
     #[allow(dead_code)]
     bytes: bytes::Bytes,
-    pub frame: Frame<'static>,
+    frame: Frame<'static>,
+}
+
+impl BytesFrame {
+    pub fn frame<'a>(&'a self) -> &'a Frame<'a> {
+        &self.frame
+    }
 }
 
 impl std::fmt::Debug for BytesFrame {

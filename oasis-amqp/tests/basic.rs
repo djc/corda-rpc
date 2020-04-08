@@ -18,11 +18,11 @@ fn login() {
         b"AMQP\x03\x01\x00\x00\x00\x00\x00\"\x02\x01\x00\x00\x00S@\xc0\x15\x01\xe0\x12\x02\xa3\x05PLAIN\tANONYMOUS"
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
-    assert_eq!(wrapped.frame, Frame::Header(Protocol::Sasl));
+    assert_eq!(wrapped.frame(), &Frame::Header(Protocol::Sasl));
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
-        wrapped.frame,
-        Frame::Sasl(sasl::Frame::Mechanisms(sasl::Mechanisms {
+        wrapped.frame(),
+        &Frame::Sasl(sasl::Frame::Mechanisms(sasl::Mechanisms {
             sasl_server_mechanisms: vec![sasl::Mechanism::Plain, sasl::Mechanism::Anonymous],
         }))
     );
@@ -45,14 +45,14 @@ fn login() {
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
-        wrapped.frame,
-        Frame::Sasl(sasl::Frame::Outcome(sasl::Outcome {
+        wrapped.frame(),
+        &Frame::Sasl(sasl::Frame::Outcome(sasl::Outcome {
             code: sasl::Code::Ok,
             additional_data: None,
         }))
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
-    assert_eq!(wrapped.frame, Frame::Header(Protocol::Amqp));
+    assert_eq!(wrapped.frame(), &Frame::Header(Protocol::Amqp));
 }
 
 #[test]
@@ -77,8 +77,8 @@ fn setup() {
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
-        wrapped.frame,
-        Frame::Amqp(amqp::Frame {
+        wrapped.frame(),
+        &Frame::Amqp(amqp::Frame {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Open(amqp::Open {
@@ -120,8 +120,8 @@ fn setup() {
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
-        wrapped.frame,
-        Frame::Amqp(amqp::Frame {
+        wrapped.frame(),
+        &Frame::Amqp(amqp::Frame {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Begin(amqp::Begin {
@@ -173,8 +173,8 @@ fn setup() {
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
-        wrapped.frame,
-        Frame::Amqp(amqp::Frame {
+        wrapped.frame(),
+        &Frame::Amqp(amqp::Frame {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Attach(amqp::Attach {
@@ -209,8 +209,8 @@ fn setup() {
     );
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
-        wrapped.frame,
-        Frame::Amqp(amqp::Frame {
+        wrapped.frame(),
+        &Frame::Amqp(amqp::Frame {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Flow(amqp::Flow {
@@ -269,8 +269,8 @@ fn transfer() {
         .extend_from_slice(&b"\x00\x00\x00\x16\x02\x00\x00\x00\x00S\x15\xc0\t\x05ACCA\x00S$E"[..]);
     let wrapped = codec.decode(&mut server).unwrap().unwrap();
     assert_eq!(
-        wrapped.frame,
-        Frame::Amqp(amqp::Frame {
+        wrapped.frame(),
+        &Frame::Amqp(amqp::Frame {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Disposition(amqp::Disposition {

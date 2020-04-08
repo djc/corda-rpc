@@ -143,12 +143,13 @@ async fn main() {
         .await
         .unwrap();
 
-    let message = match client.next().await.unwrap().unwrap().frame {
-        Frame::Amqp(frame) => frame.message,
+    let frame = client.next().await.unwrap().unwrap();
+    let message = match frame.frame() {
+        Frame::Amqp(frame) => &frame.message,
         _ => unreachable!(),
     };
 
-    let body = match message.unwrap().body {
+    let body = match message.as_ref().unwrap().body {
         Some(amqp::Body::Data(amqp::Data(data))) => data,
         Some(amqp::Body::Value(amqp::Value(amqp::Any::Bytes(data)))) => data,
         _ => unreachable!(),
