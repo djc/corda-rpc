@@ -1,6 +1,6 @@
 use std::fmt;
 
-use oasis_amqp::{amqp, Described};
+use oasis_amqp::{amqp, proto::BytesFrame, Described};
 use oasis_amqp_macros::amqp as amqp_derive;
 use serde::{Deserialize, Serialize};
 use serde_bytes;
@@ -14,8 +14,8 @@ pub struct NetworkMapSnapshot;
 
 impl<'r> Rpc<'r> for NetworkMapSnapshot {
     type Arguments = ObjectList;
-    type Response = Try<amqp::List<NodeInfo<'r>>, ()>;
-    type Result = Result<Vec<NodeInfo<'r>>, ()>;
+    type OkResult = Vec<NodeInfo<'r>>;
+    type Error = ();
 
     fn method(&self) -> &'static str {
         "networkMapSnapshot"
@@ -42,8 +42,9 @@ impl<'r> Rpc<'r> for NetworkMapSnapshot {
         }
     }
 
-    fn response(&self, response: &'r [u8]) -> Self::Result {
-        let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(&response).map_err(|_| ())?;
+    fn response(&self, response: &'r BytesFrame) -> Result<Self::OkResult, Self::Error> {
+        let body = response.body().ok_or(())?;
+        let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(body).map_err(|_| ())?;
         match rsp.obj {
             Try::Success(Success { value }) => Ok(value.0),
             Try::Failure(Failure { value: () }) => return Err(()),
