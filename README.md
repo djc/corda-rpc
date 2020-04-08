@@ -10,7 +10,7 @@ This project targets stable Rust and uses asynchronous network I/O built on Toki
 useful for code running in constrained environments (IoT) or interfacing with other native code.
 
 This project was written within [ING Bank](https://github.com/ing-bank/), while working on the
-ValueX project to create a digital securities distribution platform for institutional investors
+ValueX project to create a digital securities distribution platform for institutional investors.
 The provided functionality is separated into three crates, as explained below.
 
 The **current state of the project can be described as pre-alpha**. So far I have worked to get a simple
