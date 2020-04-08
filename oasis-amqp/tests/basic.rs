@@ -140,17 +140,17 @@ fn setup() {
         channel: 0,
         extended_header: None,
         performative: amqp::Performative::Attach(amqp::Attach {
-            name: "my-foo-sender".into(),
+            name: "my-foo-sender",
             handle: 0,
             role: amqp::Role::Sender,
             snd_settle_mode: None,
             rcv_settle_mode: None,
             source: Some(amqp::Source {
-                address: Some("source".into()),
+                address: Some("source"),
                 ..Default::default()
             }),
             target: Some(amqp::Target {
-                address: Some("target-bar".into()),
+                address: Some("target-bar"),
                 ..Default::default()
             }),
             unsettled: None,
@@ -178,17 +178,17 @@ fn setup() {
             channel: 0,
             extended_header: None,
             performative: amqp::Performative::Attach(amqp::Attach {
-                name: "my-foo-sender".into(),
+                name: "my-foo-sender",
                 handle: 0,
                 role: amqp::Role::Receiver,
                 snd_settle_mode: Some(amqp::SenderSettleMode::Mixed),
                 rcv_settle_mode: Some(amqp::ReceiverSettleMode::First),
                 source: Some(amqp::Source {
-                    address: Some("source".into()),
+                    address: Some("source"),
                     ..Default::default()
                 }),
                 target: Some(amqp::Target {
-                    address: Some("target-bar".into()),
+                    address: Some("target-bar"),
                     ..Default::default()
                 }),
                 unsettled: None,
