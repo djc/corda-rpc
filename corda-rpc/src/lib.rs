@@ -164,7 +164,7 @@ impl Client {
 
         match self.inner.next().await {
             Some(Ok(frame)) => Ok(frame),
-            _ => return Err(().into()),
+            _ => Err(().into()),
         }
     }
 }

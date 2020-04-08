@@ -47,7 +47,7 @@ impl<'r> Rpc<'r> for NetworkMapSnapshot {
         let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(body).map_err(|_| ())?;
         match rsp.obj {
             Try::Success(Success { value }) => Ok(value.0),
-            Try::Failure(Failure { value: () }) => return Err(()),
+            Try::Failure(Failure { value: () }) => Err(()),
         }
     }
 }
