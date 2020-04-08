@@ -49,7 +49,7 @@ are missing or incomplete. Nevertheless, the building blocks provided (in partic
 and deserialization based on Rust's powerful serde framework) should in many cases make it straightforward
 to fill in the missing bits.
 
-## oasis-amqp-derive: helper macro(s)
+## oasis-amqp-macros: helper macro(s)
 
 [![Documentation](https://docs.rs/oasis-amqp-macros/badge.svg)](https://docs.rs/oasis-amqp-macros/)
 [![Crates.io](https://img.shields.io/crates/v/oasis-amqp-macros.svg)](https://crates.io/crates/oasis-amqp-macros)
