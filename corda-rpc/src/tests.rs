@@ -1,4 +1,5 @@
 use super::*;
+use crate::network_map_snapshot::{CertPath, NetworkHostAndPort, PartyAndCertificate};
 use oasis_amqp::ser;
 
 #[test]

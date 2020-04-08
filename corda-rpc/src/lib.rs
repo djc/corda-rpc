@@ -4,92 +4,12 @@ use std::marker::PhantomData;
 use oasis_amqp::{amqp, de, ser, Described, Error};
 use oasis_amqp_macros::amqp as amqp_derive;
 use serde::{Deserialize, Serialize};
-use serde_bytes;
+
+mod network_map_snapshot;
+pub use network_map_snapshot::{NetworkMapSnapshot, NodeInfo};
 
 #[cfg(test)]
 mod tests;
-
-pub struct NetworkMapSnapshot;
-
-impl<'r> Rpc<'r> for NetworkMapSnapshot {
-    type Arguments = ObjectList;
-    type Response = Try<amqp::List<NodeInfo<'r>>, ()>;
-    type Result = Result<Vec<NodeInfo<'r>>, ()>;
-
-    fn method(&self) -> &'static str {
-        "networkMapSnapshot"
-    }
-
-    fn request(&self) -> Envelope<Self::Arguments> {
-        Envelope {
-            obj: ObjectList(amqp::List::default()),
-            schema: Schema {
-                types: vec![TypeNotation::RestrictedType(RestrictedType {
-                    name: "java.util.List<java.lang.Object>",
-                    label: None,
-                    provides: amqp::List::default(),
-                    source: "list",
-                    descriptor: Descriptor {
-                        name: Some("net.corda:1BLPJgNvsxdvPcbrIQd87g==".into()),
-                        code: None,
-                    },
-                    choices: amqp::List::default(),
-                })]
-                .into(),
-            },
-            transforms_schema: None,
-        }
-    }
-
-    fn response(&self, response: &'r [u8]) -> Self::Result {
-        let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(&response).map_err(|_| ())?;
-        match rsp.obj {
-            Try::Success(Success { value }) => Ok(value.0),
-            Try::Failure(Failure { value: () }) => return Err(()),
-        }
-    }
-}
-
-#[amqp_derive(descriptor(name = "net.corda:ncUcZzvT9YGn0ItdoWW3QQ=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct NodeInfo<'a> {
-    #[serde(borrow)]
-    addresses: amqp::List<NetworkHostAndPort<'a>>,
-    legal_identities_and_certs: amqp::List<PartyAndCertificate<'a>>,
-    platform_version: i32,
-    serial: i64,
-}
-
-#[amqp_derive(descriptor(name = "net.corda:IA+5d7+UvO6yts6wDzr86Q=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct NetworkHostAndPort<'a> {
-    host: &'a str,
-    port: i32,
-}
-
-#[amqp_derive(descriptor(name = "net.corda:GaPpq/rL9KtfTOQDN9ZCbA=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
-pub struct PartyAndCertificate<'a> {
-    #[serde(borrow)]
-    cert_path: CertPath<'a>,
-}
-
-#[amqp_derive(descriptor(name = "net.corda:e+qsW/cJ4ajGpb8YkJWB1A=="))]
-#[derive(Deserialize, PartialEq, Serialize)]
-pub struct CertPath<'a> {
-    #[serde(with = "serde_bytes")]
-    data: &'a [u8],
-    ty: &'a str,
-}
-
-impl<'a> fmt::Debug for CertPath<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("CertPath")
-            .field("data", &"[certificate data elided]")
-            .field("ty", &self.ty)
-            .finish()
-    }
-}
 
 pub trait Rpc<'r> {
     type Arguments;
