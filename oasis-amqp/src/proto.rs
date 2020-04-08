@@ -185,10 +185,12 @@ pub struct BytesFrame {
 }
 
 impl BytesFrame {
+    #[allow(clippy::needless_lifetimes)]
     pub fn frame<'a>(&'a self) -> &'a Frame<'a> {
         &self.frame
     }
 
+    #[allow(clippy::needless_lifetimes)]
     pub fn body<'a>(&'a self) -> Option<&'a [u8]> {
         let message = match self.frame() {
             Frame::Amqp(amqp::Frame {
