@@ -9,6 +9,47 @@ use serde_bytes;
 #[cfg(test)]
 mod tests;
 
+pub struct NetworkMapSnapshot;
+
+impl<'r> Rpc<'r> for NetworkMapSnapshot {
+    type Arguments = ObjectList;
+    type Response = Try<amqp::List<NodeInfo<'r>>, ()>;
+    type Result = Result<Vec<NodeInfo<'r>>, ()>;
+
+    fn method(&self) -> &'static str {
+        "networkMapSnapshot"
+    }
+
+    fn request(&self) -> Envelope<Self::Arguments> {
+        Envelope {
+            obj: ObjectList(amqp::List::default()),
+            schema: Schema {
+                types: vec![TypeNotation::RestrictedType(RestrictedType {
+                    name: "java.util.List<java.lang.Object>",
+                    label: None,
+                    provides: amqp::List::default(),
+                    source: "list",
+                    descriptor: Descriptor {
+                        name: Some("net.corda:1BLPJgNvsxdvPcbrIQd87g==".into()),
+                        code: None,
+                    },
+                    choices: amqp::List::default(),
+                })]
+                .into(),
+            },
+            transforms_schema: None,
+        }
+    }
+
+    fn response(&self, response: &'r [u8]) -> Self::Result {
+        let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(&response).map_err(|_| ())?;
+        match rsp.obj {
+            Try::Success(Success { value }) => Ok(value.0),
+            Try::Failure(Failure { value: () }) => return Err(()),
+        }
+    }
+}
+
 #[amqp_derive(descriptor(name = "net.corda:ncUcZzvT9YGn0ItdoWW3QQ=="))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct NodeInfo<'a> {
@@ -48,6 +89,18 @@ impl<'a> fmt::Debug for CertPath<'a> {
             .field("ty", &self.ty)
             .finish()
     }
+}
+
+pub trait Rpc<'r> {
+    type Arguments;
+    type Response: 'r;
+    type Result: 'r;
+
+    fn method(&self) -> &'static str;
+
+    fn request(&self) -> Envelope<Self::Arguments>;
+
+    fn response(&self, response: &'r [u8]) -> Self::Result;
 }
 
 #[derive(Debug, PartialEq, Serialize)]

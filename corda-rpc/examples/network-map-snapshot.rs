@@ -9,9 +9,7 @@ use structopt::StructOpt;
 use tokio;
 use uuid::Uuid;
 
-use corda_rpc::{
-    Descriptor, Envelope, NodeInfo, ObjectList, RestrictedType, Schema, Try, TypeNotation,
-};
+use corda_rpc::{NetworkMapSnapshot, Rpc};
 
 #[tokio::main]
 async fn main() {
@@ -99,6 +97,7 @@ async fn main() {
         .await
         .unwrap();
 
+    let req = NetworkMapSnapshot;
     let now = SystemTime::now();
     let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
     let timestamp = i64::try_from(timestamp.as_millis()).unwrap();
@@ -110,7 +109,7 @@ async fn main() {
     let mut properties = HashMap::new();
     properties.insert("_AMQ_VALIDATED_USER", amqp::Any::Str(&options.user));
     properties.insert("tag", amqp::Any::I32(0));
-    properties.insert("method-name", amqp::Any::Str("networkMapSnapshot".into()));
+    properties.insert("method-name", amqp::Any::Str(req.method()));
     properties.insert("rpc-id", amqp::Any::Str(&rpc_id));
     properties.insert("rpc-id-timestamp", amqp::Any::I64(timestamp));
     properties.insert("rpc-session-id", amqp::Any::Str(&rpc_session_id));
@@ -118,26 +117,7 @@ async fn main() {
     properties.insert("deduplication-sequence-number", amqp::Any::I64(0));
 
     let mut body = vec![];
-    Envelope {
-        obj: ObjectList(amqp::List::default()),
-        schema: Schema {
-            types: vec![TypeNotation::RestrictedType(RestrictedType {
-                name: "java.util.List<java.lang.Object>",
-                label: None,
-                provides: amqp::List::default(),
-                source: "list",
-                descriptor: Descriptor {
-                    name: Some("net.corda:1BLPJgNvsxdvPcbrIQd87g==".into()),
-                    code: None,
-                },
-                choices: amqp::List::default(),
-            })]
-            .into(),
-        },
-        transforms_schema: None,
-    }
-    .encode(&mut body)
-    .unwrap();
+    req.request().encode(&mut body).unwrap();
 
     client
         .transfer(
@@ -174,8 +154,7 @@ async fn main() {
         _ => unreachable!(),
     };
 
-    let rsp = Envelope::<Try<amqp::List<NodeInfo>, ()>>::decode(&body).unwrap();
-    println!("{:#?}", rsp.obj);
+    println!("{:#?}", req.response(&body).unwrap());
 }
 
 #[derive(Debug, StructOpt)]
