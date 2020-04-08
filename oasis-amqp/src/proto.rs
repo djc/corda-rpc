@@ -188,6 +188,21 @@ impl BytesFrame {
     pub fn frame<'a>(&'a self) -> &'a Frame<'a> {
         &self.frame
     }
+
+    pub fn body<'a>(&'a self) -> Option<&'a [u8]> {
+        let message = match self.frame() {
+            Frame::Amqp(amqp::Frame {
+                message: Some(msg), ..
+            }) => msg,
+            _ => return None,
+        };
+
+        match message.body {
+            Some(amqp::Body::Data(amqp::Data(data))) => Some(data),
+            Some(amqp::Body::Value(amqp::Value(amqp::Any::Bytes(data)))) => Some(data),
+            _ => None,
+        }
+    }
 }
 
 impl std::fmt::Debug for BytesFrame {
