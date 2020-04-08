@@ -189,7 +189,7 @@ pub struct Begin<'a> {
 #[amqp(descriptor("amqp:attach:list", 0x00000000_00000012))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Attach<'a> {
-    pub name: String,
+    pub name: &'a str,
     pub handle: u32,
     pub role: Role,
     pub snd_settle_mode: Option<SenderSettleMode>,
@@ -296,7 +296,7 @@ impl Serialize for Role {
 #[amqp(descriptor("amqp:source:list", 0x00000000_00000028))]
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Source<'a> {
-    pub address: Option<String>,
+    pub address: Option<&'a str>,
     pub durable: Option<TerminusDurability>,
     pub expiry_policy: Option<ExpiryPolicy>,
     pub timeout: Option<u32>,
@@ -399,7 +399,7 @@ pub struct TransactionalState {}
 #[amqp(descriptor("amqp:target:list", 0x00000000_00000029))]
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Target<'a> {
-    pub address: Option<String>,
+    pub address: Option<&'a str>,
     pub durable: Option<u32>,
     pub expiry_policy: Option<ExpiryPolicy>,
     pub timeout: Option<u32>,
@@ -520,8 +520,8 @@ pub enum Any<'a> {
     F32(f32),
     F64(f64),
     Bytes(#[serde(with = "serde_bytes")] &'a [u8]),
-    Symbol(Cow<'a, str>),
-    Str(Cow<'a, str>),
+    Symbol(&'a str),
+    Str(&'a str),
 }
 
 impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {

@@ -58,13 +58,13 @@ async fn main() {
 
     client
         .attach(amqp::Attach {
-            name: rcv_queue_name.clone(),
+            name: &rcv_queue_name,
             handle: 1,
             role: amqp::Role::Receiver,
             snd_settle_mode: None,
             rcv_settle_mode: None,
             source: Some(amqp::Source {
-                address: Some(rcv_queue_name.clone()),
+                address: Some(&rcv_queue_name),
                 ..Default::default()
             }),
             target: Some(amqp::Target {
@@ -108,15 +108,12 @@ async fn main() {
     let delivery_tag = Uuid::new_v4();
 
     let mut properties = HashMap::new();
-    properties.insert(
-        "_AMQ_VALIDATED_USER",
-        amqp::Any::Str((&options.user).into()),
-    );
+    properties.insert("_AMQ_VALIDATED_USER", amqp::Any::Str(&options.user));
     properties.insert("tag", amqp::Any::I32(0));
     properties.insert("method-name", amqp::Any::Str("networkMapSnapshot".into()));
-    properties.insert("rpc-id", amqp::Any::Str(rpc_id.clone().into()));
+    properties.insert("rpc-id", amqp::Any::Str(&rpc_id));
     properties.insert("rpc-id-timestamp", amqp::Any::I64(timestamp));
-    properties.insert("rpc-session-id", amqp::Any::Str(rpc_session_id.into()));
+    properties.insert("rpc-session-id", amqp::Any::Str(&rpc_session_id));
     properties.insert("rpc-session-id-timestamp", amqp::Any::I64(timestamp));
     properties.insert("deduplication-sequence-number", amqp::Any::I64(0));
 
