@@ -1,6 +1,6 @@
-use super::*;
-use crate::network_map_snapshot::{CertPath, NetworkHostAndPort, PartyAndCertificate};
-use oasis_amqp::ser;
+use crate::network_map_snapshot::{CertPath, NetworkHostAndPort, NodeInfo, PartyAndCertificate};
+use crate::types::*;
+use oasis_amqp::{amqp, ser};
 
 #[test]
 fn encode() {

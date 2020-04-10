@@ -5,7 +5,7 @@ use oasis_amqp_macros::amqp as amqp_derive;
 use serde::{Deserialize, Serialize};
 use serde_bytes;
 
-use super::{
+use crate::types::{
     Descriptor, Envelope, Failure, ObjectList, RestrictedType, Rpc, Schema, Success, Try,
     TypeNotation,
 };
