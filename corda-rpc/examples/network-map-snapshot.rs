@@ -1,5 +1,4 @@
 use structopt::StructOpt;
-use tokio;
 
 use corda_rpc::{Client, NetworkMapSnapshot, Rpc};
 
