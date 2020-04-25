@@ -2,7 +2,6 @@ use std::array::TryFromSliceError;
 use std::{fmt, io, str};
 
 use err_derive::Error;
-use serde;
 
 pub mod amqp;
 pub mod de;
