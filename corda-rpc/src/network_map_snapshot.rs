@@ -3,7 +3,6 @@ use std::fmt;
 use oasis_amqp::{amqp, proto::BytesFrame, Described};
 use oasis_amqp_macros::amqp as amqp_derive;
 use serde::{Deserialize, Serialize};
-use serde_bytes;
 
 use crate::types::{
     Descriptor, Envelope, Failure, ObjectList, RestrictedType, Rpc, Schema, Success, Try,
