@@ -6,15 +6,15 @@ use std::marker::PhantomData;
 
 use oasis_amqp_macros::amqp;
 use serde::{self, ser::SerializeTuple, Deserialize, Serialize};
-use serde_bytes::{ByteBuf, Bytes};
+use serde_bytes::Bytes;
 
 use crate::{de, Described};
 
 #[derive(Debug, PartialEq, Serialize)]
 pub struct Frame<'a> {
     pub channel: u16,
-    #[serde(borrow)]
-    pub extended_header: Option<&'a Bytes>,
+    #[serde(borrow, with = "serde_bytes")]
+    pub extended_header: Option<&'a [u8]>,
     pub performative: Performative<'a>,
     pub message: Option<Message<'a>>,
 }
@@ -27,7 +27,7 @@ impl<'a> Frame<'a> {
 
         let (extended, buf) = buf.split_at((doff - 2) as usize);
         let extended_header = if !extended.is_empty() {
-            Some(Bytes::new(extended))
+            Some(extended)
         } else {
             None
         };
@@ -102,7 +102,8 @@ pub struct MessageAnnotations<'a>(#[serde(borrow)] pub HashMap<&'a str, Any<'a>>
 #[derive(Debug, Default, Deserialize, PartialEq, Serialize)]
 pub struct Properties<'a> {
     pub message_id: Option<Cow<'a, str>>,
-    pub user_id: Option<&'a Bytes>,
+    #[serde(with = "serde_bytes")]
+    pub user_id: Option<&'a [u8]>,
     pub to: Option<&'a str>,
     pub subject: Option<&'a str>,
     pub reply_to: Option<Cow<'a, str>>,
@@ -228,7 +229,8 @@ pub struct Flow<'a> {
 pub struct Transfer {
     pub handle: u32,
     pub delivery_id: Option<u32>,
-    pub delivery_tag: Option<ByteBuf>,
+    #[serde(with = "serde_bytes")]
+    pub delivery_tag: Option<Vec<u8>>,
     pub message_format: Option<u32>,
     pub settled: Option<bool>,
     pub more: Option<bool>,

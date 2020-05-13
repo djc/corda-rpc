@@ -4,7 +4,7 @@ use std::time::SystemTime;
 
 use oasis_amqp::{amqp, proto::BytesFrame};
 use rand::{self, Rng};
-use serde_bytes::{ByteBuf, Bytes};
+use serde_bytes::Bytes;
 use tokio::net::ToSocketAddrs;
 use uuid::Uuid;
 
@@ -135,7 +135,7 @@ impl Client {
                 amqp::Transfer {
                     handle: 0,
                     delivery_id: Some(0),
-                    delivery_tag: Some(ByteBuf::from(delivery_tag.as_bytes().to_vec())),
+                    delivery_tag: Some(delivery_tag.as_bytes().to_vec()),
                     message_format: Some(0),
                     ..Default::default()
                 },

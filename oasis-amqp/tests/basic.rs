@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use bytes::BytesMut;
-use serde_bytes::{ByteBuf, Bytes};
+use serde_bytes::Bytes;
 use tokio_util::codec::Decoder;
 
 use oasis_amqp::proto::{Codec, Frame, Protocol};
@@ -243,7 +243,7 @@ fn transfer() {
         performative: amqp::Performative::Transfer(amqp::Transfer {
             handle: 0,
             delivery_id: Some(0),
-            delivery_tag: Some(ByteBuf::from(delivery_tag.as_bytes().to_vec())),
+            delivery_tag: Some(delivery_tag.as_bytes().to_vec()),
             message_format: Some(0),
             ..Default::default()
         }),
