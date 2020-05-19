@@ -1,4 +1,4 @@
 [licenses]
 allow-osi-fsf-free = "either"
-copyleft = "warn"
+copyleft = "deny"
 private = { ignore = true }
