@@ -4,6 +4,12 @@
 [![Coverage status](https://codecov.io/gh/djc/corda-rpc/branch/master/graph/badge.svg)](https://codecov.io/gh/djc/corda-rpc)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+Because I no longer work at ING or on any Corda-related projects, this crate is
+unlikely to see further development unless funding appears -- I am available on
+[a freelance basis](https://xavamedia.nl/). I'm happy to answer questions about
+the code and its current state, and I intend to provide (passive) maintenance
+(like PR code reviews) of this code going forward.
+
 [Corda](https://www.corda.net/) is an open source blockchain platform. To work with a Corda node,
 your code needs to communicate over [AMQP 1.0](https://www.amqp.org/) with the broker run by the node.
 This project targets stable Rust and uses asynchronous network I/O built on Tokio. This might be
@@ -18,9 +24,6 @@ RPC call to the Corda node to work, and everything provided is only complete ins
 that purpose. The example code in [network-map-snapshot](corda-rpc/examples/network-map-snapshot.rs)
 will trigger an RPC call on the Corda node as desired and return the proper response. However, this
 only works against a Corda node which has [some changes](https://github.com/corda/corda/compare/release/os/4.5...djc:amqp-rpc) applied to it.
-
-I am happy to answer questions about the code and it's current state and discuss a future roadmap,
-and I intend to provide (passive) maintenance (like PR code reviews) of this code going forward.
 
 ## corda-rpc: abstractions specific to Corda RPC
 
