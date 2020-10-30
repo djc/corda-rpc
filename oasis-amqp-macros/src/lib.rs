@@ -1,7 +1,7 @@
 extern crate proc_macro;
 
 use proc_macro2::{Span, TokenStream};
-use quote::TokenStreamExt;
+use quote::{ToTokens, TokenStreamExt};
 use quote::{format_ident, quote};
 
 /// Implement AMQP 1.0-related functionality for structs and enums
@@ -88,7 +88,7 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
 
         let ty = match &fields.unnamed.first().unwrap().ty {
             syn::Type::Path(p) => p,
-            p => panic!("only path types allowed: {:?}", p),
+            p => panic!("only path types allowed: {}", p.into_token_stream()),
         };
 
         let variant = format_ident!("F{}", i);
