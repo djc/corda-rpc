@@ -1,7 +1,7 @@
 use std::array::TryFromSliceError;
-use std::{fmt, io, str};
+use std::{fmt, io};
 
-use err_derive::Error;
+use thiserror::Error;
 
 pub mod amqp;
 pub mod de;
@@ -18,21 +18,21 @@ pub trait Described {
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error(display = "invalid data")]
+    #[error("invalid data")]
     InvalidData,
-    #[error(display = "invalid format code: {}", _0)]
-    InvalidFormatCode(#[source] de::InvalidFormatCode),
-    #[error(display = "syntax")]
+    #[error("invalid format code: {0}")]
+    InvalidFormatCode(#[from] de::InvalidFormatCode),
+    #[error("syntax")]
     Syntax,
-    #[error(display = "unexpected end")]
+    #[error("unexpected end")]
     UnexpectedEnd,
-    #[error(display = "I/O error: {}", _0)]
-    Io(#[source] io::Error),
-    #[error(display = "deserialization failed: {}", _0)]
+    #[error("I/O error: {0}")]
+    Io(#[from] io::Error),
+    #[error("deserialization failed: {0}")]
     Deserialization(String),
-    #[error(display = "serialization failed: {}", _0)]
+    #[error("serialization failed: {0}")]
     Serialization(String),
-    #[error(display = "buffer not empty after deserialization")]
+    #[error("buffer not empty after deserialization")]
     TrailingCharacters,
 }
 
