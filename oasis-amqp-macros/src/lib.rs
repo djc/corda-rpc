@@ -1,8 +1,7 @@
 extern crate proc_macro;
 
 use proc_macro2::{Span, TokenStream};
-use quote::{ToTokens, TokenStreamExt};
-use quote::{format_ident, quote};
+use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 
 /// Implement AMQP 1.0-related functionality for structs and enums
 ///
