@@ -16,9 +16,9 @@ oasis-amqp-macros = { version = "0.1", path = "../oasis-amqp-macros" }
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_bytes = { version = "0.11.4" }
-tokio = { version = "0.3", features = ["net"] }
+tokio = { version = "1", features = ["net"] }
 uuid = { version = "0.8", features = ["v4"] }
 
 [dev-dependencies]
 structopt = "0.3.12"
-tokio = { version = "0.3", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }

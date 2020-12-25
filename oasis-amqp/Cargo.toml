@@ -11,11 +11,11 @@ workspace = ".."
 readme = "../README.md"
 
 [dependencies]
-bytes = "0.6"
+bytes = "1"
 futures = "0.3"
 oasis-amqp-macros = { version = "0.1.1", path = "../oasis-amqp-macros" }
 serde = { version = "1", features = ["derive"] }
 serde_bytes = { version = "0.11.4" }
 thiserror = "1.0.21"
-tokio = { version = "0.3", features = ["net"] }
-tokio-util = { version = "0.5", features = ["codec"] }
+tokio = { version = "1", features = ["net"] }
+tokio-util = { version = "0.6", features = ["codec"] }
