@@ -12,13 +12,13 @@ pub enum Frame<'a> {
     Outcome(Outcome<'a>),
 }
 
-#[amqp(descriptor("amqp:sasl-mechanisms:list", 0x00000000_00000040))]
+#[amqp(descriptor("amqp:sasl-mechanisms:list", 0x0000_0000_0000_0040))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Mechanisms {
     pub sasl_server_mechanisms: Vec<Mechanism>,
 }
 
-#[amqp(descriptor("amqp:sasl-init:list", 0x00000000_00000041))]
+#[amqp(descriptor("amqp:sasl-init:list", 0x0000_0000_0000_0041))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Init<'a> {
     pub mechanism: Mechanism,
@@ -35,7 +35,7 @@ pub enum Mechanism {
     ScramSha1,
 }
 
-#[amqp(descriptor("amqp:sasl-outcome:list", 0x00000000_00000044))]
+#[amqp(descriptor("amqp:sasl-outcome:list", 0x0000_0000_0000_0044))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Outcome<'a> {
     pub code: Code,
