@@ -65,7 +65,7 @@ impl Client {
         let rcv_queue_name = format!(
             "rpc.client.{}.{}",
             self.user,
-            rand::thread_rng().gen::<u64>() & 0xefffffff_ffffffff,
+            rand::thread_rng().gen::<u64>() & 0xefff_ffff_ffff_ffff,
         );
 
         self.inner
