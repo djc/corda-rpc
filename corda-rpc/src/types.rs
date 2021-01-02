@@ -145,7 +145,7 @@ pub trait Rpc<'r> {
     fn response(&self, response: &'r BytesFrame) -> Result<Self::OkResult, Self::Error>;
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000001))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0001))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Envelope<'a, T> {
     pub obj: T,
@@ -187,14 +187,14 @@ impl<'a, T> Envelope<'a, T> {
     }
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000002))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0002))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Schema<'a> {
     #[serde(borrow)]
     pub types: amqp::List<TypeNotation<'a>>,
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000003))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0003))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Descriptor<'a> {
     #[serde(borrow)]
@@ -202,7 +202,7 @@ pub struct Descriptor<'a> {
     pub code: Option<u64>,
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000004))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0004))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Field<'a> {
     pub name: &'a str,
@@ -227,7 +227,7 @@ pub enum TypeNotation<'a> {
     RestrictedType(RestrictedType<'a>),
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000005))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0005))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct CompositeType<'a> {
     pub name: &'a str,
@@ -237,7 +237,7 @@ pub struct CompositeType<'a> {
     pub fields: amqp::List<Field<'a>>,
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000006))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0006))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct RestrictedType<'a> {
     pub name: &'a str,
@@ -248,14 +248,14 @@ pub struct RestrictedType<'a> {
     pub choices: amqp::List<Choice<'a>>,
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000007))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0007))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct Choice<'a> {
     pub name: &'a str,
     pub value: &'a str,
 }
 
-#[amqp_derive(descriptor(code = 0xc5620000_00000009))]
+#[amqp_derive(descriptor(code = 0xc562_0000_0000_0009))]
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub struct TransformsSchema {}
 
