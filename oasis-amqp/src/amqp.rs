@@ -589,7 +589,7 @@ impl<'a, 'de: 'a> Deserialize<'de> for Any<'a> {
                 fmt::Formatter::write_str(fmt, "enum Any")
             }
 
-            fn visit_enum<A>(self, data: A) -> serde::export::Result<Self::Value, A::Error>
+            fn visit_enum<A>(self, data: A) -> Result<Self::Value, A::Error>
             where
                 A: serde::de::EnumAccess<'de>,
             {

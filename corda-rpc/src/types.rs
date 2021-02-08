@@ -52,7 +52,7 @@ where
                     Success::<T>::NAME => Ok(Field::F0(PhantomData::default())),
                     Failure::<E>::NAME => Ok(Field::F1(PhantomData::default())),
                     _ => {
-                        let value = &serde::export::from_utf8_lossy(value);
+                        let value = &std::string::String::from_utf8_lossy(value);
                         Err(serde::de::Error::unknown_variant(value, VARIANTS))
                     }
                 }
@@ -86,7 +86,7 @@ where
             fn expecting(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
                 fmt::Formatter::write_str(fmt, "enum #name_str")
             }
-            fn visit_enum<__A>(self, __data: __A) -> serde::export::Result<Self::Value, __A::Error>
+            fn visit_enum<__A>(self, __data: __A) -> std::result::Result<Self::Value, __A::Error>
             where
                 __A: serde::de::EnumAccess<'de>,
             {

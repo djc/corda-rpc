@@ -94,8 +94,8 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
         let mut ty_name = ty.clone();
         let mut segment = ty_name.path.segments.last_mut().unwrap();
         segment.arguments = syn::PathArguments::None;
-        int_arms.append_all(quote!(#ty_name::CODE => serde::export::Ok(Field::#variant),));
-        bytes_arms.append_all(quote!(#ty_name::NAME => serde::export::Ok(Field::#variant),));
+        int_arms.append_all(quote!(#ty_name::CODE => std::result::Result::Ok(Field::#variant),));
+        bytes_arms.append_all(quote!(#ty_name::NAME => std::result::Result::Ok(Field::#variant),));
 
         let variant_name = syn::LitStr::new(&var.ident.to_string(), Span::call_site());
         variants.append_all(quote!(#variant_name,));
@@ -113,13 +113,13 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
         fn visit_u64<E>(
             self,
             value: u64,
-        ) -> serde::export::Result<Self::Value, E>
+        ) -> std::result::Result<Self::Value, E>
         where
             E: serde::de::Error,
         {
             match Some(value) {
                 #int_arms
-                _ => serde::export::Err(serde::de::Error::invalid_value(
+                _ => std::result::Result::Err(serde::de::Error::invalid_value(
                     serde::de::Unexpected::Unsigned(value),
                     &"invalid descriptor ID",
                 )),
@@ -133,7 +133,7 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
             use std::fmt;
 
             impl #impl_generics serde::Deserialize<#de_life> for #name #orig_ty_generics #where_clause {
-                fn deserialize<D>(deserializer: D) -> serde::export::Result<Self, D::Error>
+                fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
                 where
                     D: serde::Deserializer<#de_life>,
                 {
@@ -153,16 +153,16 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
                         fn visit_bytes<E>(
                             self,
                             value: &[u8],
-                        ) -> serde::export::Result<Self::Value, E>
+                        ) -> std::result::Result<Self::Value, E>
                         where
                             E: serde::de::Error,
                         {
                             match Some(value) {
                                 #bytes_arms
                                 _ => {
-                                    let value = &serde::export::from_utf8_lossy(value);
-                                    serde::export::Err(serde::de::Error::unknown_variant(
-                                        value, VARIANTS,
+                                    let value = std::string::String::from_utf8_lossy(value);
+                                    std::result::Result::Err(serde::de::Error::unknown_variant(
+                                        &value, VARIANTS,
                                     ))
                                 }
                             }
@@ -180,8 +180,8 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
                     }
 
                     struct Visitor #ty_generics {
-                        marker: serde::export::PhantomData<#name#orig_ty_generics>,
-                        lifetime: serde::export::PhantomData<&#de_life ()>,
+                        marker: std::marker::PhantomData<#name#orig_ty_generics>,
+                        lifetime: std::marker::PhantomData<&#de_life ()>,
                     }
 
                     impl #impl_generics serde::de::Visitor<#de_life> for Visitor #ty_generics {
@@ -195,14 +195,14 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
                         fn visit_enum<__A>(
                             self,
                             __data: __A,
-                        ) -> serde::export::Result<Self::Value, __A::Error>
+                        ) -> std::result::Result<Self::Value, __A::Error>
                         where
                             __A: serde::de::EnumAccess<#de_life>,
                         {
                             match match serde::de::EnumAccess::variant(__data) {
-                                serde::export::Ok(__val) => __val,
-                                serde::export::Err(__err) => {
-                                    return serde::export::Err(__err);
+                                std::result::Result::Ok(__val) => __val,
+                                std::result::Result::Err(__err) => {
+                                    return std::result::Result::Err(__err);
                                 }
                             } {
                                 #visitor_arms
@@ -221,8 +221,8 @@ fn enum_serde(def: syn::ItemEnum) -> proc_macro::TokenStream {
                         #name_str,
                         VARIANTS,
                         Visitor {
-                            marker: serde::export::PhantomData::<#name#orig_ty_generics>,
-                            lifetime: serde::export::PhantomData,
+                            marker: std::marker::PhantomData::<#name#orig_ty_generics>,
+                            lifetime: std::marker::PhantomData,
                         },
                     )
                 }
