@@ -1,6 +1,6 @@
 [package]
 name = "corda-rpc"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Dirkjan Ochtman <dirkjan.ochtman@ing.com>"]
 edition = "2018"
 description = "Toolkit for doing Corda RPC from Rust"
@@ -11,8 +11,8 @@ workspace = ".."
 readme = "../README.md"
 
 [dependencies]
-oasis-amqp = { version = "0.2", path = "../oasis-amqp" }
-oasis-amqp-macros = { version = "0.1", path = "../oasis-amqp-macros" }
+oasis-amqp = { version = "0.3", path = "../oasis-amqp" }
+oasis-amqp-macros = { version = "0.2", path = "../oasis-amqp-macros" }
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
 serde_bytes = { version = "0.11.4" }
