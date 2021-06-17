@@ -52,7 +52,7 @@ impl<'r> Rpc<'r> for NetworkMapSnapshot {
 }
 
 #[amqp_derive(descriptor(name = "net.corda:ncUcZzvT9YGn0ItdoWW3QQ=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct NodeInfo<'a> {
     #[serde(borrow)]
     pub addresses: amqp::List<NetworkHostAndPort<'a>>,
@@ -62,21 +62,21 @@ pub struct NodeInfo<'a> {
 }
 
 #[amqp_derive(descriptor(name = "net.corda:IA+5d7+UvO6yts6wDzr86Q=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct NetworkHostAndPort<'a> {
     pub host: &'a str,
     pub port: i32,
 }
 
 #[amqp_derive(descriptor(name = "net.corda:GaPpq/rL9KtfTOQDN9ZCbA=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct PartyAndCertificate<'a> {
     #[serde(borrow)]
     pub cert_path: CertPath<'a>,
 }
 
 #[amqp_derive(descriptor(name = "net.corda:e+qsW/cJ4ajGpb8YkJWB1A=="))]
-#[derive(Deserialize, PartialEq, Serialize)]
+#[derive(PartialEq, Serialize)]
 pub struct CertPath<'a> {
     #[serde(with = "serde_bytes")]
     pub data: &'a [u8],

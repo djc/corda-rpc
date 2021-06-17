@@ -122,13 +122,13 @@ where
 }
 
 #[amqp_derive(descriptor(name = "net.corda:e+qsW/cJ4ajGpb8YkJWB1A=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Success<T> {
     pub(crate) value: T,
 }
 
 #[amqp_derive(descriptor(name = "net.corda:????????????????????????"))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Failure<T> {
     pub(crate) value: T,
 }
@@ -146,7 +146,7 @@ pub trait Rpc<'r> {
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0001))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Envelope<'a, T> {
     pub obj: T,
     #[serde(borrow)]
@@ -188,14 +188,14 @@ impl<'a, T> Envelope<'a, T> {
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0002))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Schema<'a> {
     #[serde(borrow)]
     pub types: amqp::List<TypeNotation<'a>>,
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0003))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Descriptor<'a> {
     #[serde(borrow)]
     pub name: Option<amqp::Symbol<'a>>,
@@ -203,7 +203,7 @@ pub struct Descriptor<'a> {
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0004))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Field<'a> {
     pub name: &'a str,
     #[serde(rename = "type")]
@@ -217,7 +217,7 @@ pub struct Field<'a> {
 }
 
 #[amqp_derive(descriptor(name = "net.corda:1BLPJgNvsxdvPcbrIQd87g=="))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct ObjectList(pub amqp::List<()>);
 
 #[amqp_derive]
@@ -228,7 +228,7 @@ pub enum TypeNotation<'a> {
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0005))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct CompositeType<'a> {
     pub name: &'a str,
     pub label: Option<&'a str>,
@@ -238,7 +238,7 @@ pub struct CompositeType<'a> {
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0006))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct RestrictedType<'a> {
     pub name: &'a str,
     pub label: Option<&'a str>,
@@ -249,14 +249,14 @@ pub struct RestrictedType<'a> {
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0007))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct Choice<'a> {
     pub name: &'a str,
     pub value: &'a str,
 }
 
 #[amqp_derive(descriptor(code = 0xc562_0000_0000_0009))]
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize)]
 pub struct TransformsSchema {}
 
 pub(crate) enum SectionId {

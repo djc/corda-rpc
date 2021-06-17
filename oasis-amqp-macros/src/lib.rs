@@ -9,7 +9,8 @@ use quote::{format_ident, quote, ToTokens, TokenStreamExt};
 /// variants and unit variants are supported; all variants within an enum should be of the same
 /// type.
 ///
-/// For structs: this macro is used to implement the `oasis-amqp::Described` trait.
+/// For structs: this macro is used to implement the `oasis-amqp::Described` trait. It also
+/// ensures `serde::Deserialize` is implemented for a type.
 #[proc_macro_attribute]
 pub fn amqp(
     attr: proc_macro::TokenStream,
@@ -312,7 +313,7 @@ fn struct_serde(
         }
     );
 
-    let rename = quote!(#[serde(rename = #renamed)]);
+    let rename = quote!(#[derive(Deserialize)] #[serde(rename = #renamed)]);
     (described.into(), Some(rename.into()))
 }
 
