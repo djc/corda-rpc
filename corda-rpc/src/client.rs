@@ -24,7 +24,7 @@ impl Client {
         container: String,
     ) -> Result<Self, ()> {
         let mut inner = oasis_amqp::Client::connect(address).await.map_err(|_| ())?;
-        inner.login(&user, &password).await?;
+        inner.login(&user, password).await?;
         inner.open(&container).await?;
         inner.begin().await?;
 

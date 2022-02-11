@@ -255,7 +255,7 @@ fn transfer() {
                 ..Default::default()
             }),
             application_properties: Some(amqp::ApplicationProperties(properties)),
-            body: Some(amqp::Body::Data(amqp::Data(&body))),
+            body: Some(amqp::Body::Data(amqp::Data(body))),
             ..Default::default()
         }),
     });
