@@ -418,12 +418,12 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         self.deserialize_seq(visitor)
     }
 
-    fn deserialize_map<V>(mut self, visitor: V) -> Result<V::Value>
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
         let (_, len, _) = self.composite()?;
-        visitor.visit_map(Map::new(&mut self, len / 2))
+        visitor.visit_map(Map::new(self, len / 2))
     }
 
     fn deserialize_struct<V>(
