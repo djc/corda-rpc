@@ -28,7 +28,7 @@ impl Client {
         inner.open(&container).await?;
         inner.begin().await?;
 
-        let sender_name = format!("corda-rpc-{:x}", Uuid::new_v4().to_hyphenated());
+        let sender_name = format!("corda-rpc-{:x}", Uuid::new_v4().hyphenated());
         inner
             .attach(amqp::Attach {
                 name: &sender_name,
@@ -113,8 +113,8 @@ impl Client {
         let timestamp = now.duration_since(SystemTime::UNIX_EPOCH).unwrap();
         let timestamp = i64::try_from(timestamp.as_millis()).unwrap();
 
-        let rpc_id = format!("{:x}", Uuid::new_v4().to_hyphenated());
-        let rpc_session_id = format!("{:x}", Uuid::new_v4().to_hyphenated());
+        let rpc_id = format!("{:x}", Uuid::new_v4().hyphenated());
+        let rpc_session_id = format!("{:x}", Uuid::new_v4().hyphenated());
         let delivery_tag = Uuid::new_v4();
 
         let mut properties = HashMap::new();
