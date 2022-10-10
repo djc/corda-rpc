@@ -279,7 +279,7 @@ impl<'a> Frame<'a> {
                         ser::into_bytes(footer, &mut buf)?;
                     }
                 }
-                (&mut buf[6..8]).copy_from_slice(&f.channel.to_be_bytes()[..]);
+                buf[6..8].copy_from_slice(&f.channel.to_be_bytes()[..]);
             }
             Frame::Header(p) => {
                 buf.copy_from_slice(p.header());
@@ -293,7 +293,7 @@ impl<'a> Frame<'a> {
 
         buf[4] = 2; // doff
         let len = buf.len() as u32;
-        (&mut buf[..4]).copy_from_slice(&len.to_be_bytes()[..]);
+        buf[..4].copy_from_slice(&len.to_be_bytes()[..]);
         Ok(buf)
     }
 }

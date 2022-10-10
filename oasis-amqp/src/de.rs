@@ -27,7 +27,7 @@ impl<'de> Deserializer<'de> {
     }
 
     fn peek(&self) -> Result<u8> {
-        self.input.get(0).copied().ok_or(Error::UnexpectedEnd)
+        self.input.first().copied().ok_or(Error::UnexpectedEnd)
     }
 
     fn next(&mut self) -> Result<u8> {
